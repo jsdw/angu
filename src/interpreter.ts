@@ -1,9 +1,26 @@
 import { Expression, ExprVariable, ExprNumber, ExprBool, ExprFunctioncall } from './expression'
 import { ExpressionOpts } from './parser'
 
+/**
+ * The context in which an expression will be evaluated.
+ * This defines the variables, operators and functions that
+ * are available to use.
+ */
 export interface Context extends ExpressionOpts {
     /** Variables and functions that the evaluator can use */
     scope: { [name: string]: any }
+}
+
+/**
+ * This context is provided to any functions on scope that are called
+ * by the interpreter.
+ */
+export interface FunctionContext extends Context {
+    /**
+     * Raw, unevaluated Expressions (the evaluated forms of which have)
+     * been provided as the function args
+     */
+    rawArgs: Expression[]
 }
 
 export function evaluate(expr: Expression, context: Context): any {
@@ -16,16 +33,12 @@ export function evaluate(expr: Expression, context: Context): any {
 }
 
 function evaluateVariable(expr: ExprVariable, context: Context): any {
-    // if the variable doesn't exist, store the variable name as itself.
-    // This allows evaluators to find out the name for eg assignment, and
-    // sortof means that we have a basic token type.
+    // If the variable doesn't exist, return its name. Assuming assignment
+    // isn't implemented, this allows for primitive tokens.
     const res = context.scope[expr.name]
-    if (typeof res === 'undefined') {
-        context.scope[expr.name] = expr.name
-        return expr.name
-    } else {
-        return res
-    }
+    return typeof res === 'undefined'
+        ? expr.name
+        : res
 }
 
 function evaluateNumber(expr: ExprNumber, _context: Context): any {
@@ -39,7 +52,7 @@ function evaluateBool(expr: ExprBool, _context: Context): any {
 function evaluateFunctioncall(expr: ExprFunctioncall, context: Context): any {
     const fn = context.scope[expr.name]
     if (typeof fn === 'function') {
-        const self = { context }
+        const self = { context, rawArgs: expr.args }
         return fn.apply(self, expr.args.map(arg => evaluate(arg, context)))
     } else if (!fn) {
         throw new Error(`The function ${expr.name} is not defined`)

@@ -2,19 +2,14 @@ import * as interpreter from './interpreter'
 import * as parser from './parser'
 import { isOk } from './result';
 
-/**
- * The context in which an expression will be evaluated.
- * This defines the variables, operators and functions that
- * are available to use.
- */
-export type Context = interpreter.Context
+export { Context, FunctionContext } from './interpreter'
 
 /**
  * Given an expression to evaluate in string form, and a context
  * to evaluate the expression against, return the result of
  * this evaluation or throw an error if something goes wrong.
  */
-export function run(input: string, context: interpreter.Context): any {
+export function evaluate(input: string, context: interpreter.Context): any {
     const parsed = parser.expression(context).parse(input)
 
     if (!isOk(parsed)) {

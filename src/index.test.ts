@@ -1,10 +1,10 @@
 import * as assert from 'assert'
 import { Context } from "./interpreter";
-import { run } from './index'
+import { evaluate } from './index'
 
 describe('index', function(){
 
-    it('can act as a simple calculator', () => {
+    it('can be used to build up a basic language', () => {
 
         const ctx: () => Context = () => ({
             scope: {
@@ -15,14 +15,15 @@ describe('index', function(){
                 // eval but ignore the first thing; return the second.
                 // suddenly we have multiple expressions!
                 ';': (_: any, b: any) => b,
-                // variables that are not resolved resolve to their own name.
-                // This allows us to assign to unassigned variables. A bit
-                // hacky, will prob improve.
+                // we can access raw, unevaluated args using the 'this'
+                // object. Here, we expect assignment to be given a variable
+                // name to assign a value to.
                 '=': function(this: any, a: any, b: any) {
-                    if (typeof a === 'string') {
-                        this.context.scope[a] = b
+                    const firstArg = this.rawArgs[0]
+                    if (firstArg.kind === 'variable') {
+                        this.context.scope[firstArg.name] = b
                     } else {
-                        throw Error(`cannot re-assign a variable that's already been assigned`)
+                        throw Error(`Non-variable name provided to left of assignment: ${a}`)
                     }
                     return b
                 },
@@ -39,11 +40,21 @@ describe('index', function(){
             ]
         })
 
-        assert.equal(run('1 + 2 + 3', ctx()), 6)
-        assert.equal(run('1 + 2 + 3 / 3', ctx()), 4)
-        assert.equal(run('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8)
-        assert.equal(run(' log10(100)  +2 -2', ctx()), 2)
-        assert.equal(run('foo = 10; bar = 2; foo * bar', ctx()), 20)
+        assert.equal(evaluate('1 + 2 + 3', ctx()), 6)
+        assert.equal(evaluate('1 + 2 + 3 / 3', ctx()), 4)
+        assert.equal(evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8)
+        assert.equal(evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8)
+        assert.equal(evaluate('(1 + 2 +  3/3) :pow 2 / 2', ctx()), 8)
+        assert.equal(evaluate(' log10(100)  +2 -2', ctx()), 2)
+        assert.equal(evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()), 20)
+
+        // We'll use this example in the README:
+        assert.equal(evaluate(`
+            foo = 2;
+            bar = 4;
+            wibble = foo * bar + pow(2, 10);
+            foo + bar + wibble
+        `, ctx()), 1038)
 
     })
 

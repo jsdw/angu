@@ -1,4 +1,22 @@
 # Calc.js
 
 A simple, versatile DSL that can be used for safely evaluating snippets of code in-browser.
+This makes it simple to evaluate expressions consisting of numbers, booleans, tokens,
+functions and operators (with the ability to define associativity and precedence).
 
+Despite having no built in assignment, or even supporting multiple expressions, we can
+evaluate expressions like:
+
+```
+foo = 2;
+bar = 4;
+wibble = foo * bar + pow(2, 10);
+foo + bar + wibble
+```
+
+Where every operator (including `;` and `=`) and function is defined to do exactly as you wish,
+allowing you to allow anything from a tiny subset of possible operations to a more fully featured
+DSL/proto-language. The evaluation is completely sandboxed and can only run functions that you explicitly
+provide to the interpreter.
+
+More examples can be found [here](https://github.com/jsdw/calcjs/blob/master/src/index.test.ts).
