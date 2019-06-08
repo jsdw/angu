@@ -17,9 +17,6 @@
     "evaluator",
     "calculator"
   ],
-  "files": [
-    "./dist/**"
-  ],
   "author": "James Wilson",
   "license": "MIT",
   "bugs": {
