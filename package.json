@@ -2,7 +2,8 @@
   "name": "calcjs",
   "version": "0.1.0",
   "description": "A small interpreter for evaluating calculations",
-  "main": "index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.ts",
   "scripts": {
     "test": "tsc && mocha 'dist/*.test.js'",
     "build": "tsc"
@@ -16,6 +17,9 @@
     "evaluator",
     "calculator"
   ],
+  "files": [
+    "./dist/**"
+  ],
   "author": "James Wilson",
   "license": "MIT",
   "bugs": {
@@ -27,7 +31,6 @@
     "@types/mocha": "^5.2.7",
     "assert": "^2.0.0",
     "mocha": "^6.1.4",
-    "tsc": "^1.20150623.0",
     "typescript": "^3.5.1"
   }
 }
