@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "A small interpreter for evaluating calculations",
   "main": "./dist/index.js",
-  "types": "./dist/index.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "test": "tsc && mocha 'dist/*.test.js'",
     "build": "tsc"
