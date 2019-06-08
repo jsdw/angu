@@ -1,0 +1,33 @@
+{
+  "name": "calcjs",
+  "version": "0.1.0",
+  "description": "A small interpreter for evaluating calculations",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsc && mocha 'dist/*.test.js'",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jsdw/calcjs.git"
+  },
+  "keywords": [
+    "interpreter",
+    "evaluator",
+    "calculator"
+  ],
+  "author": "James Wilson",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jsdw/calcjs/issues"
+  },
+  "homepage": "https://github.com/jsdw/calcjs#readme",
+  "devDependencies": {
+    "@types/assert": "^1.4.2",
+    "@types/mocha": "^5.2.7",
+    "assert": "^2.0.0",
+    "mocha": "^6.1.4",
+    "tsc": "^1.20150623.0",
+    "typescript": "^3.5.1"
+  }
+}
