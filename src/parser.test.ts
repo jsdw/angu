@@ -7,7 +7,9 @@ describe('parser', function() {
     it('parses basic numbers properly', () => {
         assert.deepEqual(parser.number().eval('1234'), ok(1234))
         assert.deepEqual(parser.number().eval('1234.56'), ok(1234.56))
-        assert.deepEqual(parser.number().eval('1.2'), ok(1.2))
+        assert.deepEqual(parser.number().eval('1.21'), ok(1.21))
+        assert.deepEqual(parser.number().eval('-1.22'), ok(-1.22))
+        assert.deepEqual(parser.number().eval('+1.23'), ok(1.23))
         assert.deepEqual(parser.number().eval('0.5'), ok(0.5))
         assert.deepEqual(parser.number().eval('0.91'), ok(0.91))
         assert.ok(isErr(parser.number().eval('.91')))
@@ -28,12 +30,79 @@ describe('parser', function() {
 
     it('parses basic expression types', () => {
         const opts = { precedence: {} }
+        assert.deepEqual(parser.expression(opts).eval('true'), ok({ kind: 'bool', value: true }))
+        assert.deepEqual(parser.expression(opts).eval('false'), ok({ kind: 'bool', value: false }))
         assert.deepEqual(parser.expression(opts).eval('foo'), ok({ kind: 'variable', name: 'foo' }))
-        assert.deepEqual(parser.expression(opts).eval('1.2'), ok({ kind: 'number', number: 1.2 }))
+        assert.deepEqual(parser.expression(opts).eval('1.2'), ok({ kind: 'number', value: 1.2 }))
         assert.deepEqual(parser.expression(opts).eval('(foo)'), ok({ kind: 'variable', name: 'foo' }))
         assert.deepEqual(parser.expression(opts).eval('( foo)'), ok({ kind: 'variable', name: 'foo' }))
         assert.deepEqual(parser.expression(opts).eval('( foo )'), ok({ kind: 'variable', name: 'foo' }))
-        assert.deepEqual(parser.expression(opts).eval('(1.2 )'), ok({ kind: 'number', number: 1.2 }))
+        assert.deepEqual(parser.expression(opts).eval('(1.2 )'), ok({ kind: 'number', value: 1.2 }))
+    })
+
+    it('parses function calls', () => {
+        const opts = { precedence: {} }
+        assert.deepEqual(parser.expression(opts).eval('foo()'), ok({
+            kind: 'functioncall',
+            name: 'foo',
+            args: []
+        }))
+        assert.deepEqual(parser.expression(opts).eval('foo(1)'), ok({
+            kind: 'functioncall',
+            name: 'foo',
+            args: [{ kind: 'number', value: 1 }]
+        }))
+        assert.deepEqual(parser.expression(opts).eval('foo(((1)))'), ok({
+            kind: 'functioncall',
+            name: 'foo',
+            args: [{ kind: 'number', value: 1 }]
+        }))
+        assert.deepEqual(parser.expression(opts).eval('foo(1, bar,2 , true )'), ok({
+            kind: 'functioncall',
+            name: 'foo',
+            args: [
+                { kind: 'number', value: 1 },
+                { kind: 'variable', name: 'bar' },
+                { kind: 'number', value: 2 },
+                { kind: 'bool', value: true }
+            ]
+        }))
+
+        it('parses binary ops taking precedence into account', () => {
+            const opts = { precedence: { '+': 4, '*': 5, '^': 6 } }
+            assert.deepEqual(parser.expression(opts).eval('3 + 4 * 5 ^ 6'), ok({
+                kind: 'binaryOp',
+                op: '^',
+                right: { kind: 'number', value: 6 },
+                left: {
+                    kind: 'binaryOp',
+                    op: '*',
+                    right: { kind: 'number', value: 5 },
+                    left: {
+                        kind: 'binaryOp',
+                        op: '+',
+                        right: { kind: 'number', value: 4 },
+                        left: { kind: 'number', value: 3 }
+                    }
+                }
+            }))
+            assert.deepEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), ok({
+                kind: 'binaryOp',
+                op: '^',
+                left: { kind: 'number', value: 3 },
+                right: {
+                    kind: 'binaryOp',
+                    op: '*',
+                    left: { kind: 'number', value: 4 },
+                    right: {
+                        kind: 'binaryOp',
+                        op: '+',
+                        left: { kind: 'number', value: 5 },
+                        right: { kind: 'number', value: 6 }
+                    }
+                }
+            }))
+        })
     })
 
 })

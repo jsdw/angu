@@ -41,6 +41,13 @@ export default class Parser<T> {
         })
     }
 
+    /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
+    static lazy<T>(fn: () => Parser<T>): Parser<T> {
+        return new Parser(input => {
+            return fn().parse(input)
+        })
+    }
+
     /** Return a parser that matches a given string */
     static matchString(s: Input): Parser<string> {
         return new Parser(input => {

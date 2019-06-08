@@ -1,10 +1,11 @@
 import Parser from './libparser'
 import { Expression } from './expression'
+import { isOk } from './result';
 
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
-const OP_REGEX = /[^0-9a-zA-Z()]/
+const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=-]/
 const WHITESPACE_REGEX = /\s/
 const DEFAULT_PRECEDENCE = 5
 
@@ -18,11 +19,19 @@ export type ExpressionOpts = {
 // Parse any expression. This is the primary entrypoint:
 
 export function expression(opts: ExpressionOpts): Parser<Expression> {
+    return binaryOpSubExpression(opts)
+        .or(binaryOpExpression(opts))
+}
+
+// When parsing binaryOpExpressions, we accept any sort of expression except
+// another binaryOpExpression, since that would consume the stuff the first
+// binaryOpExpr is trying to find.
+export function binaryOpSubExpression(opts: ExpressionOpts): Parser<Expression> {
     return parenExpression(opts)
         .or(functioncallExpression(opts))
-        .or(binaryOpExpression(opts))
         .or(unaryOpExpression(opts))
         .or(numberExpression())
+        .or(booleanExpression())
         .or(variableExpression())
 }
 
@@ -36,8 +45,19 @@ export function variableExpression(): Parser<Expression> {
 
 export function numberExpression(): Parser<Expression> {
     return number().map(n => {
-        return { kind: 'number', number: n }
+        return { kind: 'number', value: n }
     })
+}
+
+export function booleanExpression(): Parser<Expression> {
+    return Parser.matchString('true')
+        .or(Parser.matchString('false'))
+        .map(boolStr => {
+            return {
+                kind: 'bool',
+                value: boolStr === 'true' ? true : false
+            }
+        })
 }
 
 export function unaryOpExpression(opts: ExpressionOpts): Parser<Expression> {
@@ -92,84 +112,89 @@ export function binaryOpExpression(opts: ExpressionOpts): Parser<Expression> {
         })
 }
 
-// When parsing binaryOpExpressions, we don't want to recursively try parsing
-// each sub expression as binaryOp as well, so don't try parsing it:
-export function binaryOpSubExpression(opts: ExpressionOpts): Parser<Expression> {
-    return parenExpression(opts)
-        .or(functioncallExpression(opts))
-        .or(unaryOpExpression(opts))
-        .or(numberExpression())
-        .or(variableExpression())
-}
-
 export function functioncallExpression(opts: ExpressionOpts): Parser<Expression> {
-    let name: string
-    const sep = ignoreWhitespace()
-        .andThen(_ => Parser.matchString(','))
-        .andThen(_ => ignoreWhitespace())
+    return Parser.lazy(() => {
+        let name: string
+        const sep = ignoreWhitespace()
+            .andThen(_ => Parser.matchString(','))
+            .andThen(_ => ignoreWhitespace())
 
-    return token()
-        .andThen(n => {
-            name = n
-            return Parser.matchString('(')
-        })
-        .andThen(_ => {
-            return expression(opts)
-                .sepBy(sep)
-                .map(({ results }) => results)
-        })
-        .map(args => {
-            return { kind: 'functioncall', name, args }
-        })
+        return token()
+            .andThen(n => {
+                name = n
+                return Parser.matchString('(')
+            })
+            .andThen(_ => {
+                return expression(opts)
+                    .sepBy(sep)
+                    .map(({ results }) => results)
+            })
+            .map(args => {
+                return { kind: 'functioncall', name, args }
+            })
+    })
+
 }
 
 export function parenExpression(opts: ExpressionOpts): Parser<Expression> {
-    let expr: Expression
-    return Parser.matchString('(')
-        .andThen(_ => ignoreWhitespace())
-        .andThen(_ => expression(opts))
-        .andThen(e => {
-            expr = e
-            return ignoreWhitespace()
-        })
-        .andThen(_ => Parser.matchString(')'))
-        .map(_ => expr)
+    return Parser.lazy(() => {
+        let expr: Expression
+        return Parser.matchString('(')
+            .andThen(_ => ignoreWhitespace())
+            .andThen(_ => expression(opts))
+            .andThen(e => {
+                expr = e
+                return ignoreWhitespace()
+            })
+            .andThen(_ => Parser.matchString(')'))
+            .map(_ => expr)
+    })
 }
 
 // Helpful utility parsers:
 
 export function number(): Parser<number> {
-    let nStr: string = ""
-    return Parser.mustTakeWhile(NUMBER_REGEX)
-        .andThen(r => {
-            nStr += r
-            return Parser.takeWhileN(1, '.')
-        })
-        .andThen(r => {
-            nStr += r
-            if (r === '.') {
+    return Parser.lazy(() => {
+        let nStr: string = ""
+        return Parser.matchString('-')
+            .or(Parser.matchString('+'))
+            .optional()
+            .andThen(r => {
+                if (isOk(r)) { nStr += r.value }
                 return Parser.mustTakeWhile(NUMBER_REGEX)
-            } else {
-                return Parser.ok('')
-            }
-        })
-        .andThen(r => {
-            nStr += r
-            return Parser.ok(Number(nStr))
-        })
+            })
+            .andThen(r => {
+                nStr += r
+                return Parser.matchString('.').optional()
+            })
+            .andThen(r => {
+                if (isOk(r)) {
+                    nStr += '.'
+                    return Parser.mustTakeWhile(NUMBER_REGEX)
+                } else {
+                    return Parser.ok('')
+                }
+            })
+            .andThen(r => {
+                nStr += r
+                return Parser.ok(Number(nStr))
+            })
+    })
 }
 
 export function token(): Parser<string> {
-    let s: string = ""
-    return Parser.mustTakeWhile(TOKEN_START_REGEX)
-        .andThen(r => {
-            s += r
-            return Parser.takeWhile(TOKEN_BODY_REGEX)
-        })
-        .andThen(r => {
-            s += r
-            return Parser.ok(s)
-        })
+    return Parser.lazy(() => {
+        let s: string = ""
+        return Parser.mustTakeWhile(TOKEN_START_REGEX)
+            .andThen(r => {
+                s += r
+                return Parser.takeWhile(TOKEN_BODY_REGEX)
+            })
+            .andThen(r => {
+                s += r
+                return Parser.ok(s)
+            })
+    })
 }
 
 export function op(): Parser<string> {
