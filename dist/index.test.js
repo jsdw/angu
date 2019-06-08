@@ -10,19 +10,42 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var index_1 = require("./index");
 describe('index', function () {
-    it('can be used to build up a basic language', function () {
-        var ctx = function () { return ({
+    it('can be used to create a simple calculator', function () {
+        // Define the functionality and such available to
+        // the evaluator:
+        var ctx = {
+            // We provide these operators:
             scope: {
                 '-': function (a, b) { return a - b; },
                 '+': function (a, b) { return a + b; },
                 '/': function (a, b) { return a / b; },
                 '*': function (a, b) { return a * b; },
-                // eval but ignore the first thing; return the second.
-                // suddenly we have multiple expressions!
+            },
+            // And define the precedence to be as expected:
+            precedence: [
+                ['/', '*'],
+                ['-', '+']
+            ]
+        };
+        // Now, we can evaluate things in this context:
+        var r1 = index_1.evaluate('2 + 10 * 4', ctx);
+        assert.equal(r1, 42);
+        var r2 = index_1.evaluate('10 + 4 / 2 * 3', ctx);
+        assert.equal(r2, 16);
+    });
+    it('can be used to build up a basic language', function () {
+        var ctx = function () { return ({
+            scope: {
+                // Our basic calculator bits from above:
+                '-': function (a, b) { return a - b; },
+                '+': function (a, b) { return a + b; },
+                '/': function (a, b) { return a / b; },
+                '*': function (a, b) { return a * b; },
+                // Let's allow multiple expressions, separated by ';':
                 ';': function (_, b) { return b; },
                 // we can access raw, unevaluated args using the 'this'
-                // object. Here, we expect assignment to be given a variable
-                // name to assign a value to.
+                // object. We use this here to allow '=' to assign new
+                // variables that are visible to our evaluator:
                 '=': function (a, b) {
                     var firstArg = this.rawArgs[0];
                     if (firstArg.kind === 'variable') {
@@ -33,6 +56,7 @@ describe('index', function () {
                     }
                     return b;
                 },
+                // we can define regular functions as well:
                 'log10': function (a) { return Math.log(a) / Math.log(10); },
                 'pow': function (a, b) { return Math.pow(a, b); }
             },
@@ -40,7 +64,7 @@ describe('index', function () {
             precedence: [
                 ['/', '*'],
                 ['-', '+'],
-                // We can alter associativity of ops as well:
+                // We can alter associativity of ops as well (right or left):
                 { ops: ['='], associativity: 'right' },
                 [';']
             ]
