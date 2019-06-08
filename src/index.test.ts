@@ -22,18 +22,21 @@ describe('index', function(){
                     if (typeof a === 'string') {
                         this.context.scope[a] = b
                     } else {
-                        throw Error(`cannot assign to the non-variable ${a}`)
+                        throw Error(`cannot re-assign a variable that's already been assigned`)
                     }
+                    return b
                 },
                 'log10': (a: any) => Math.log(a) / Math.log(10),
                 'pow': (a: any, b: any) => Math.pow(a, b)
             },
-            precedence: {
-                // 5 is default if not given
-                '*': 6,
-                '/': 6,
-                ';': 0
-            }
+            // first in this list = first to be evaluated:
+            precedence: [
+                ['/', '*'],
+                ['-', '+'],
+                // We can alter associativity of ops as well:
+                { ops: ['='], associativity: 'right' },
+                [';']
+            ]
         })
 
         assert.equal(run('1 + 2 + 3', ctx()), 6)

@@ -3,6 +3,13 @@ import * as parser from './parser'
 import { isOk } from './result';
 
 /**
+ * The context in which an expression will be evaluated.
+ * This defines the variables, operators and functions that
+ * are available to use.
+ */
+export type Context = interpreter.Context
+
+/**
  * Given an expression to evaluate in string form, and a context
  * to evaluate the expression against, return the result of
  * this evaluation or throw an error if something goes wrong.

@@ -5,19 +5,61 @@ import { isOk } from './result';
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
-const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/
+const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;-]/
 const WHITESPACE_REGEX = /\s/
-const DEFAULT_PRECEDENCE = 5
 
 // Configure precedence of ops:
 
-export type ExpressionOpts = {
-    /** A map from op name to precedence. Higher = tighter binding */
-    precedence: { [op: string]: number }
+export interface ExpressionOpts {
+    /**
+     * Order ops from high to low precedence, and optionally
+     * pick an associativity for them(default left). Ops declared
+     * first are evaluated first.
+     *
+     * ops not defined here will have a lower precedence than anything
+     * that is defined.
+     */
+    precedence?: ({ ops: string[], associativity?: 'right' | 'left' } | string[])[]
 }
 
-/** Parse any expression, consuming surrounding space.This is the primary entrypoint: */
+type InternalExpressionOpts = {
+    /** A map from op name to precedence. Higher = tighter binding. Default 5 */
+    precedence: PrecedenceMap
+    /** Is the operator left or right associative? Default left */
+    associativity: AssociativityMap
+}
+
+type PrecedenceMap = { [op: string]: number }
+type AssociativityMap = { [op: string]: 'left' | 'right' }
+
+/** Parse any expression, consuming surrounding space.This is the primary entry point: */
 export function expression(opts: ExpressionOpts): Parser<Expression> {
+    // Convert opts to an internal format that's easier to work with.
+    const precedenceArray = opts.precedence || []
+    const precedenceMap: PrecedenceMap = {}
+    const associativityMap: AssociativityMap = {}
+    let precedenceValue = precedenceArray.length
+    for(const rawEntry of precedenceArray) {
+        // entry could be ['+','-',..] or { ops: ['+', '-',..], associativity: 'left }
+        // for convenience. Convert to the more general form to iterate over:
+        const entry = Array.isArray(rawEntry) ? { ops: rawEntry } : rawEntry
+        const ops = entry.ops
+        const associativity = entry.associativity || 'left'
+        // Note precedence and associativity of each op:
+        for(const op of ops) {
+            precedenceMap[op] = precedenceValue
+            associativityMap[op] = associativity
+        }
+        precedenceValue--
+    }
+
+    return anyExpression({
+        precedence: precedenceMap,
+        associativity: associativityMap
+    })
+}
+
+export function anyExpression(opts: InternalExpressionOpts): Parser<Expression> {
     const exprParser = binaryOpExpression(opts).or(binaryOpSubExpression(opts))
 
     return ignoreWhitespace()
@@ -28,7 +70,7 @@ export function expression(opts: ExpressionOpts): Parser<Expression> {
 // When parsing binaryOpExpressions, we accept any sort of expression except
 // another binaryOpExpression, since that would consume the stuff the first
 // binaryOpExpr is trying to find.
-export function binaryOpSubExpression(opts: ExpressionOpts): Parser<Expression> {
+export function binaryOpSubExpression(opts: InternalExpressionOpts): Parser<Expression> {
     return parenExpression(opts)
         .or(functioncallExpression(opts))
         .or(unaryOpExpression(opts))
@@ -62,15 +104,18 @@ export function booleanExpression(): Parser<Expression> {
         })
 }
 
-export function unaryOpExpression(opts: ExpressionOpts): Parser<Expression> {
+export function unaryOpExpression(opts: InternalExpressionOpts): Parser<Expression> {
     return op().andThen(op => {
-        return expression(opts).map(expr => {
-            return { kind: 'unaryOp', op, expr }
+        return anyExpression(opts).map(expr => {
+            return { kind: 'functioncall', name: op.value, args: [expr], infix: true }
         })
     })
 }
 
-export function binaryOpExpression(opts: ExpressionOpts): Parser<Expression> {
+export function binaryOpExpression(opts: InternalExpressionOpts): Parser<Expression> {
+    const precedence = opts.precedence || {}
+    const associativity = opts.associativity || {}
+
     // ops separate the expressions:
     const sep = ignoreWhitespace()
         .andThen(_ => op())
@@ -79,22 +124,46 @@ export function binaryOpExpression(opts: ExpressionOpts): Parser<Expression> {
         })
 
     // given array of ops, return index of highest precedence:
-    function highestPrecIdx(ops: string[]): number {
+    function highestPrecIdx(ops: Op[]): [number, number] {
         let bestP: number = 0
-        let bestOp: string = ''
         let bestIdx: number = -1
+        let bestLastIdx: number = -1
 
         for(let i = 0; i < ops.length; i++) {
             let curr = ops[i]
-            let currP = opts.precedence[curr] || DEFAULT_PRECEDENCE
+            // If we don't know the precedence, give infix function calls
+            // the highest possible, and others a lower precedence than
+            // anything defined (to reflect the fact that function calls
+            // ordinary take precedence owing to brackets)
+            let currP = precedence[curr.value] || (curr.isOp ? 0 : Infinity)
 
-            if (!bestOp || currP > bestP) {
-                bestOp = curr
+            if (bestIdx < 0 || currP > bestP) {
                 bestP = currP
                 bestIdx = i
+                bestLastIdx = i
+            } else if (currP === bestP && bestLastIdx - 1 === i) {
+                // How many items in a row have the same precedence?
+                // We can then look at associativity of them all.
+                bestLastIdx = i
             }
         }
-        return bestIdx
+        return [bestIdx, bestLastIdx]
+    }
+
+    // Given some ops to look at first based on precedence, decide what to
+    // look at next based on associativity:
+    function getIdxFromAssociativity(startIdx: number, endIdx: number, ops: Op[]): number {
+        let assoc = ""
+        for (let i = startIdx; i <= endIdx; i++) {
+            if (!assoc) {
+                assoc = associativity[ops[i].value] || 'left'
+            } else if (assoc !== associativity[ops[i].value]) {
+                throw new Error('This should not be possible: adjacent operators have mixed associativity')
+            }
+        }
+        return assoc === 'left'
+            ? startIdx
+            : endIdx
     }
 
     // parse expressions separated by ops, and use precedence
@@ -103,18 +172,19 @@ export function binaryOpExpression(opts: ExpressionOpts): Parser<Expression> {
         .mustSepBy(sep)
         .map(({ results, separators }) => {
             while (separators.length) {
-                const idx = highestPrecIdx(separators)
+                const [firstIdx, lastIdx] = highestPrecIdx(separators)
+                const idx = getIdxFromAssociativity(firstIdx, lastIdx, separators)
                 const op = separators.splice(idx, 1)[0]
                 const left = results[idx]
                 const right = results[idx+1]
-                const expr: Expression = { kind: 'binaryOp', op, left, right }
+                const expr: Expression = { kind: 'functioncall', name: op.value, args: [ left, right ], infix: true }
                 results.splice(idx, 2, expr)
             }
             return results[0]
         })
 }
 
-export function functioncallExpression(opts: ExpressionOpts): Parser<Expression> {
+export function functioncallExpression(opts: InternalExpressionOpts): Parser<Expression> {
     return Parser.lazy(() => {
         let name: string
         const sep = ignoreWhitespace()
@@ -127,7 +197,7 @@ export function functioncallExpression(opts: ExpressionOpts): Parser<Expression>
                 return Parser.matchString('(')
             })
             .andThen(_ => {
-                return expression(opts)
+                return anyExpression(opts)
                     .sepBy(sep)
                     .map(({ results }) => results)
             })
@@ -137,18 +207,18 @@ export function functioncallExpression(opts: ExpressionOpts): Parser<Expression>
                     .map(_ => r)
             })
             .map(args => {
-                return { kind: 'functioncall', name, args }
+                return { kind: 'functioncall', name, args, infix: false }
             })
     })
 
 }
 
-export function parenExpression(opts: ExpressionOpts): Parser<Expression> {
+export function parenExpression(opts: InternalExpressionOpts): Parser<Expression> {
     return Parser.lazy(() => {
         let expr: Expression
         return Parser.matchString('(')
             .andThen(_ => ignoreWhitespace())
-            .andThen(_ => expression(opts))
+            .andThen(_ => anyExpression(opts))
             .andThen(e => {
                 expr = e
                 return ignoreWhitespace()
@@ -204,8 +274,13 @@ export function token(): Parser<string> {
     })
 }
 
-export function op(): Parser<string> {
-    return Parser.mustTakeWhile(OP_REGEX)
+type Op = { value: string, isOp: boolean }
+export function op(): Parser<Op> {
+    return Parser
+        // An op is the valid op chars, or..
+        .mustTakeWhile(OP_REGEX).map(s => ({ value: s, isOp: true }))
+        // A token prefixed with ':'
+        .or(Parser.matchString(":").andThen(token).map(s => ({ value: s, isOp: false })))
 }
 
 export function ignoreWhitespace(): Parser<void> {

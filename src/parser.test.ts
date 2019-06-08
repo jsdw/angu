@@ -29,7 +29,7 @@ describe('parser', function() {
     })
 
     it('parses basic expression types', () => {
-        const opts = { precedence: {} }
+        const opts = { }
         assert.deepEqual(parser.expression(opts).eval('true'), ok({ kind: 'bool', value: true }))
         assert.deepEqual(parser.expression(opts).eval('false'), ok({ kind: 'bool', value: false }))
         assert.deepEqual(parser.expression(opts).eval('foo'), ok({ kind: 'variable', name: 'foo' }))
@@ -40,27 +40,47 @@ describe('parser', function() {
         assert.deepEqual(parser.expression(opts).eval('(1.2 )'), ok({ kind: 'number', value: 1.2 }))
     })
 
+    it('parses functions as operators by prefixing with ":"', () => {
+        const opts = { }
+        assert.deepEqual(parser.expression(opts).parse('1 :foo 2'), ok({
+            output: {
+                kind: 'functioncall',
+                name: 'foo',
+                infix: true,
+                args: [
+                    { kind: 'number', value: 1 },
+                    { kind: 'number', value: 2 }
+                ]
+            },
+            rest: ''
+        }))
+    })
+
     it('parses function calls', () => {
-        const opts = { precedence: {} }
+        const opts = { }
         assert.deepEqual(parser.expression(opts).eval('foo()'), ok({
             kind: 'functioncall',
             name: 'foo',
+            infix: false,
             args: []
         }))
         assert.deepEqual(parser.expression(opts).eval('foo(1)'), ok({
             kind: 'functioncall',
             name: 'foo',
+            infix: false,
             args: [{ kind: 'number', value: 1 }]
         }))
         assert.deepEqual(parser.expression(opts).eval('foo(((1)))'), ok({
             kind: 'functioncall',
             name: 'foo',
+            infix: false,
             args: [{ kind: 'number', value: 1 }]
         }))
         assert.deepEqual(parser.expression(opts).parse('foo(1, bar,2 , true )'), ok({
             output: {
                 kind: 'functioncall',
                 name: 'foo',
+                infix: false,
                 args: [
                     { kind: 'number', value: 1 },
                     { kind: 'variable', name: 'bar' },
@@ -70,42 +90,115 @@ describe('parser', function() {
             },
             rest: ''
         }))
-
-        it('parses binary ops taking precedence into account', () => {
-            const opts = { precedence: { '+': 4, '*': 5, '^': 6 } }
-            assert.deepEqual(parser.expression(opts).eval('3 + 4 * 5 ^ 6'), ok({
-                kind: 'binaryOp',
-                op: '^',
-                right: { kind: 'number', value: 6 },
-                left: {
-                    kind: 'binaryOp',
-                    op: '*',
-                    right: { kind: 'number', value: 5 },
-                    left: {
-                        kind: 'binaryOp',
-                        op: '+',
-                        right: { kind: 'number', value: 4 },
-                        left: { kind: 'number', value: 3 }
-                    }
-                }
-            }))
-            assert.deepEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), ok({
-                kind: 'binaryOp',
-                op: '^',
-                left: { kind: 'number', value: 3 },
-                right: {
-                    kind: 'binaryOp',
-                    op: '*',
-                    left: { kind: 'number', value: 4 },
-                    right: {
-                        kind: 'binaryOp',
-                        op: '+',
-                        left: { kind: 'number', value: 5 },
-                        right: { kind: 'number', value: 6 }
-                    }
-                }
-            }))
-        })
     })
 
+    it('parses binary ops taking precedence into account', () => {
+        const opts = { precedence: [['^'], ['*'], ['+']] }
+        assert.deepEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), ok({
+            kind: 'functioncall',
+            name: '+',
+            infix: true,
+            args: [
+                {
+                    kind: 'functioncall',
+                    name: '*',
+                    infix: true,
+                    args: [
+                        {
+                            kind: 'functioncall',
+                            name: '^',
+                            infix: true,
+                            args: [
+                                { kind: 'number', value: 3 },
+                                { kind: 'number', value: 4 }
+                            ]
+                        },
+                        { kind: 'number', value: 5 }
+                    ]
+                },
+                { kind: 'number', value: 6 }
+            ]
+        }))
+        assert.deepEqual(parser.expression(opts).eval('3 + 4 * 5 ^ 6'), ok({
+            kind: 'functioncall',
+            name: '+',
+            infix: true,
+            args: [
+                { kind: 'number', value: 3 },
+                {
+                    kind: 'functioncall',
+                    name: '*',
+                    infix: true,
+                    args: [
+                        { kind: 'number', value: 4 },
+                        {
+                            kind: 'functioncall',
+                            name: '^',
+                            infix: true,
+                            args: [
+                                { kind: 'number', value: 5 },
+                                { kind: 'number', value: 6 }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }))
+    })
+
+    it('always puts function ops first if no precedence given for them', () => {
+        const opts = { precedence: [['*'], ['bar']] }
+        // foo is evaluated first:
+        assert.deepEqual(parser.expression(opts).eval('5 * 3 :foo 2 * 4'), ok({
+            kind: 'functioncall',
+            name: '*',
+            infix: true,
+            args: [
+                {
+                    kind: 'functioncall',
+                    name: '*',
+                    infix: true,
+                    args: [
+                        { kind: 'number', value: 5 },
+                        {
+                            kind: 'functioncall',
+                            name: 'foo',
+                            infix: true,
+                            args: [
+                                { kind: 'number', value: 3 },
+                                { kind: 'number', value: 2 }
+                            ]
+                        }
+                    ]
+                },
+                { kind: 'number', value: 4 }
+            ]
+        }))
+        // bar is evaluated last (it is listed last in precedence):
+        assert.deepEqual(parser.expression(opts).eval('5 * 3 :bar 2 * 4'), ok({
+            kind: 'functioncall',
+            name: 'bar',
+            infix: true,
+            args: [
+                {
+                    kind: 'functioncall',
+                    name: '*',
+                    infix: true,
+                    args: [
+                        { kind: 'number', value: 5 },
+                        { kind: 'number', value: 3 }
+                    ]
+                },
+                {
+                    kind: 'functioncall',
+                    name: '*',
+                    infix: true,
+                    args: [
+                        { kind: 'number', value: 2 },
+                        { kind: 'number', value: 4 }
+                    ]
+                }
+            ]
+        }))
+    })
 })
