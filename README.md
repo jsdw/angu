@@ -29,6 +29,40 @@ You can install the latest release directly from github using `npm`:
 npm install jsdw/calcjs#v0.1.0
 ```
 
+# Basic Usage
+
+First, you define a `Context` which determines how expressions will be evaluated: 
+
+```
+import { evaluate } from 'calcjs'
+
+const ctx = {
+    // We provide these operators:
+    scope: {
+        '-': (a: any, b: any) => a - b,
+        '+': (a: any, b: any) => a + b,
+        '/': (a: any, b: any) => a / b,
+        '*': (a: any, b: any) => a * b,
+    },
+    // And define the precedence to be as expected:
+    precedence: [
+        ['/', '*'],
+        ['-', '+']
+    ]
+}
+```
+
+Then, you can evaluate expressions in this context:
+
+```
+const r1 = evaluate('2 + 10 * 4', ctx)
+assert.equal(r1, 42)
+```
+
+If something goes wrong evaluating the provided string, an error will be thrown. Future work will improve the detail that you get back with these errors.
+
+[More examples can be found here](https://github.com/jsdw/calcjs/blob/master/src/index.test.ts).
+
 # Details
 
 ## Operators
