@@ -5,7 +5,7 @@ import { isOk } from './result';
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
-const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=-]/
+const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/
 const WHITESPACE_REGEX = /\s/
 const DEFAULT_PRECEDENCE = 5
 
@@ -16,11 +16,13 @@ export type ExpressionOpts = {
     precedence: { [op: string]: number }
 }
 
-// Parse any expression. This is the primary entrypoint:
-
+/** Parse any expression, consuming surrounding space.This is the primary entrypoint: */
 export function expression(opts: ExpressionOpts): Parser<Expression> {
-    return binaryOpSubExpression(opts)
-        .or(binaryOpExpression(opts))
+    const exprParser = binaryOpExpression(opts).or(binaryOpSubExpression(opts))
+
+    return ignoreWhitespace()
+        .andThen(_ => exprParser)
+        .andThen(e => ignoreWhitespace().map(_ => e))
 }
 
 // When parsing binaryOpExpressions, we accept any sort of expression except
@@ -128,6 +130,11 @@ export function functioncallExpression(opts: ExpressionOpts): Parser<Expression>
                 return expression(opts)
                     .sepBy(sep)
                     .map(({ results }) => results)
+            })
+            .andThen(r => {
+                return ignoreWhitespace()
+                    .andThen(_ => Parser.matchString(')'))
+                    .map(_ => r)
             })
             .map(args => {
                 return { kind: 'functioncall', name, args }

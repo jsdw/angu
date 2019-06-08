@@ -57,15 +57,18 @@ describe('parser', function() {
             name: 'foo',
             args: [{ kind: 'number', value: 1 }]
         }))
-        assert.deepEqual(parser.expression(opts).eval('foo(1, bar,2 , true )'), ok({
-            kind: 'functioncall',
-            name: 'foo',
-            args: [
-                { kind: 'number', value: 1 },
-                { kind: 'variable', name: 'bar' },
-                { kind: 'number', value: 2 },
-                { kind: 'bool', value: true }
-            ]
+        assert.deepEqual(parser.expression(opts).parse('foo(1, bar,2 , true )'), ok({
+            output: {
+                kind: 'functioncall',
+                name: 'foo',
+                args: [
+                    { kind: 'number', value: 1 },
+                    { kind: 'variable', name: 'bar' },
+                    { kind: 'number', value: 2 },
+                    { kind: 'bool', value: true }
+                ]
+            },
+            rest: ''
         }))
 
         it('parses binary ops taking precedence into account', () => {
