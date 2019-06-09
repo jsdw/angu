@@ -74,7 +74,7 @@ assert.equal(r1.value, 42)
 If something goes wrong evaluating the provided string, an error will be returned. Errors contain
 the position information and so on to feed back to the user exactly what's gone wrong.
 
-[More examples can be found here](https://github.com/jsdw/calcjs/blob/master/src/index.test.ts).
+[More examples can be found here](https://github.com/jsdw/angu/blob/master/src/index.test.ts).
 
 # Details
 

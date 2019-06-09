@@ -1,7 +1,7 @@
 {
-  "name": "calcjs",
+  "name": "angu",
   "version": "0.2.0",
-  "description": "A small interpreter for evaluating calculations",
+  "description": "A small interpreter for creating DSLs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jsdw/calcjs.git"
+    "url": "git+https://github.com/jsdw/angu.git"
   },
   "keywords": [
     "interpreter",
@@ -20,9 +20,9 @@
   "author": "James Wilson",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jsdw/calcjs/issues"
+    "url": "https://github.com/jsdw/angu/issues"
   },
-  "homepage": "https://github.com/jsdw/calcjs#readme",
+  "homepage": "https://github.com/jsdw/angu#readme",
   "devDependencies": {
     "@types/assert": "^1.4.2",
     "@types/mocha": "^5.2.7",
