@@ -1,3 +1,13 @@
+# v0.2.1
+
+## Bug Fixes
+
+- Unary ops now parse after numbers in order to avoid conflicts with parsing '-'/'+' on numbers.
+
+## Breaking Changes
+
+- Infix functions are now surrounded in backticks, to free up single quotes for future usage.
+
 # v0.2.0
 
 ## Additions
