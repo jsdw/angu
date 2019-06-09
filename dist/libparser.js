@@ -8,12 +8,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var result = __importStar(require("./result"));
-var ErrKind;
-(function (ErrKind) {
-    ErrKind["MatchString"] = "MATCH_STRING";
-    ErrKind["MustTakeWhile"] = "MUST_TAKE_WHILE";
-    ErrKind["MustSepBy"] = "MUST_SEP_BY";
-})(ErrKind = exports.ErrKind || (exports.ErrKind = {}));
 var Parser = /** @class */ (function () {
     function Parser(_fn_) {
         this._fn_ = _fn_;
@@ -44,7 +38,7 @@ var Parser = /** @class */ (function () {
                 return result.ok({ output: s, rest: input.slice(s.length) });
             }
             else {
-                return result.err({ kind: ErrKind.MatchString, expected: s, input: input });
+                return result.err({ kind: 'MATCH_STRING', expected: s, input: input });
             }
         });
     };
@@ -69,7 +63,7 @@ var Parser = /** @class */ (function () {
         return new Parser(function (input) {
             var res = Parser.takeWhileN(n, pat).parse(input);
             if (result.isOk(res) && !res.value.output.length) {
-                return result.err({ kind: ErrKind.MustTakeWhile, input: input });
+                return result.err({ kind: 'MUST_TAKE_WHILE', input: input });
             }
             else {
                 return res;
@@ -78,6 +72,17 @@ var Parser = /** @class */ (function () {
     };
     Parser.mustTakeWhile = function (pat) {
         return Parser.mustTakeWhileN(Infinity, pat);
+    };
+    /** Run this on a parser to peek at the available position information (distances from end) */
+    Parser.prototype.mapWithPosition = function (fn) {
+        var _this = this;
+        return new Parser(function (input) {
+            return result.map(_this.parse(input), function (val) {
+                var startLen = input.length;
+                var endLen = val.rest.length;
+                return { output: fn(val.output, { startLen: startLen, endLen: endLen }), rest: val.rest };
+            });
+        });
     };
     /** Make the success of this parser optional */
     Parser.prototype.optional = function () {
@@ -166,7 +171,7 @@ var Parser = /** @class */ (function () {
         return new Parser(function (input) {
             var res = _this.sepBy(sep).parse(input);
             if (result.isOk(res) && !res.value.output.separators.length) {
-                return result.err({ kind: ErrKind.MustSepBy, input: input });
+                return result.err({ kind: 'MUST_SEP_BY', input: input });
             }
             else {
                 return res;

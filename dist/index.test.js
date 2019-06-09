@@ -8,7 +8,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
-var index_1 = require("./index");
+var calcjs = __importStar(require("./index"));
 describe('index', function () {
     it('can be used to create a simple calculator', function () {
         // Define the functionality and such available to
@@ -28,10 +28,10 @@ describe('index', function () {
             ]
         };
         // Now, we can evaluate things in this context:
-        var r1 = index_1.evaluate('2 + 10 * 4', ctx);
-        assert.equal(r1, 42);
-        var r2 = index_1.evaluate('10 + 4 / 2 * 3', ctx);
-        assert.equal(r2, 16);
+        var r1 = calcjs.evaluate('2 + 10 * 4', ctx);
+        assert.equal(r1.value, 42);
+        var r2 = calcjs.evaluate('10 + 4 / 2 * 3', ctx);
+        assert.equal(r2.value, 16);
     });
     it('can be used to build up a basic language', function () {
         var ctx = function () { return ({
@@ -69,14 +69,14 @@ describe('index', function () {
                 [';']
             ]
         }); };
-        assert.equal(index_1.evaluate('1 + 2 + 3', ctx()), 6);
-        assert.equal(index_1.evaluate('1 + 2 + 3 / 3', ctx()), 4);
-        assert.equal(index_1.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8);
-        assert.equal(index_1.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8);
-        assert.equal(index_1.evaluate('(1 + 2 +  3/3) :pow 2 / 2', ctx()), 8);
-        assert.equal(index_1.evaluate(' log10(100)  +2 -2', ctx()), 2);
-        assert.equal(index_1.evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()), 20);
+        assert.equal(calcjs.evaluate('1 + 2 + 3', ctx()).value, 6);
+        assert.equal(calcjs.evaluate('1 + 2 + 3 / 3', ctx()).value, 4);
+        assert.equal(calcjs.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8);
+        assert.equal(calcjs.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8);
+        assert.equal(calcjs.evaluate('(1 + 2 +  3/3) :pow 2 / 2', ctx()).value, 8);
+        assert.equal(calcjs.evaluate(' log10(100)  +2 -2', ctx()).value, 2);
+        assert.equal(calcjs.evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()).value, 20);
         // We'll use this example in the README:
-        assert.equal(index_1.evaluate("\n            foo = 2;\n            bar = 4;\n            wibble = foo * bar + pow(2, 10);\n            foo + bar + wibble\n        ", ctx()), 1038);
+        assert.equal(calcjs.evaluate("\n            foo = 2;\n            bar = 4;\n            wibble = foo * bar + pow(2, 10);\n            foo + bar + wibble\n        ", ctx()).value, 1038);
     });
 });

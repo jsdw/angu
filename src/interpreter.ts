@@ -1,5 +1,7 @@
 import { Expression, ExprVariable, ExprNumber, ExprBool, ExprFunctioncall } from './expression'
+import { EvalError } from './errors'
 import { ExpressionOpts } from './parser'
+import { Result, ok, err, isOk } from './result'
 
 /**
  * The context in which an expression will be evaluated.
@@ -23,7 +25,7 @@ export interface FunctionContext extends Context {
     rawArgs: Expression[]
 }
 
-export function evaluate(expr: Expression, context: Context): any {
+export function evaluate(expr: Expression, context: Context): Result<unknown, EvalError> {
     switch(expr.kind) {
         case 'variable': return evaluateVariable(expr, context)
         case 'number': return evaluateNumber(expr, context)
@@ -32,31 +34,57 @@ export function evaluate(expr: Expression, context: Context): any {
     }
 }
 
-function evaluateVariable(expr: ExprVariable, context: Context): any {
+function evaluateVariable(expr: ExprVariable, context: Context): Result<unknown, EvalError> {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
-    const res = context.scope[expr.name]
+    const res = context.scope[expr.name] as unknown
     return typeof res === 'undefined'
-        ? expr.name
-        : res
+        ? ok(expr.name)
+        : ok(res)
 }
 
-function evaluateNumber(expr: ExprNumber, _context: Context): any {
-    return expr.value
+function evaluateNumber(expr: ExprNumber, _context: Context): Result<unknown, EvalError> {
+    return ok(expr.value)
 }
 
-function evaluateBool(expr: ExprBool, _context: Context): any {
-    return expr.value
+function evaluateBool(expr: ExprBool, _context: Context): Result<unknown, EvalError> {
+    return ok(expr.value)
 }
 
-function evaluateFunctioncall(expr: ExprFunctioncall, context: Context): any {
+function evaluateFunctioncall(expr: ExprFunctioncall, context: Context): Result<unknown, EvalError> {
     const fn = context.scope[expr.name]
     if (typeof fn === 'function') {
         const self = { context, rawArgs: expr.args }
-        return fn.apply(self, expr.args.map(arg => evaluate(arg, context)))
+        // Evaluate each arg before passing it in, threading out any errors:
+        const evaluatedArgs = []
+        for (const arg of expr.args) {
+            const res = evaluate(arg, context)
+            if (isOk(res)) {
+                evaluatedArgs.push(res.value)
+            } else {
+                // Something went wrong evaluating a sub expr; pass that error on:
+                return res
+            }
+        }
+        try {
+            return ok(fn.apply(self, evaluatedArgs))
+        } catch (e) {
+            return err({
+                kind: 'EVAL_THROW',
+                expr,
+                error: e
+            })
+        }
     } else if (!fn) {
-        throw new Error(`The function ${expr.name} is not defined`)
+        return err({
+            kind: 'FUNCTION_NOT_DEFINED',
+            expr
+        })
     } else {
-        throw new Error(`${expr.name} is being called like a function but is not one`)
+        return err({
+            kind: 'NOT_A_FUNCTION',
+            expr,
+            value: fn
+        })
     }
 }

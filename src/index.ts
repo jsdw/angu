@@ -1,9 +1,11 @@
 import * as interpreter from './interpreter'
 import * as parser from './parser'
-import * as libparser from './libparser'
+import * as errors from './errors'
 import { isOk, Result, err } from './result';
 
+// Re-export some useful functions:
 export { Context, FunctionContext } from './interpreter'
+export { isOk, isErr } from './result'
 
 /**
  * Given an expression to evaluate in string form, and a context
@@ -21,11 +23,7 @@ export function evaluate(input: string, context: interpreter.Context): Result<an
         return err({ kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest })
     }
 
-    try {
-        return interpreter.evaluate(parsed.value.output, context)
-    } catch (e) {
-        return err({ kind: 'INTERPRETER', input, error: e })
-    }
+    return interpreter.evaluate(parsed.value.output, context)
 }
 
 /**
@@ -35,6 +33,6 @@ export function evaluate(input: string, context: interpreter.Context): Result<an
  * failure. They may contain more depending on their `kind`.
  */
 type EvaluationError
-    = libparser.Err
-    | { kind: 'NOT_CONSUMED_ALL', input: string }
-    | { kind: 'INTERPRETER', input: string, error: any }
+    = errors.ParseError
+    | errors.EvalError
+    | errors.InterpretError

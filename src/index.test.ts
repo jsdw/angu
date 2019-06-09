@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { Context } from "./interpreter";
-import { evaluate } from './index'
+import * as calcjs from './index'
 
 describe('index', function(){
 
@@ -24,11 +24,10 @@ describe('index', function(){
         }
 
         // Now, we can evaluate things in this context:
-        const r1 = evaluate('2 + 10 * 4', ctx)
-        assert.equal(r1, 42)
-
-        const r2 = evaluate('10 + 4 / 2 * 3', ctx)
-        assert.equal(r2, 16)
+        const r1 = calcjs.evaluate('2 + 10 * 4', ctx)
+        assert.equal(r1.value, 42)
+        const r2 = calcjs.evaluate('10 + 4 / 2 * 3', ctx)
+        assert.equal(r2.value, 16)
 
     })
 
@@ -69,21 +68,21 @@ describe('index', function(){
             ]
         })
 
-        assert.equal(evaluate('1 + 2 + 3', ctx()), 6)
-        assert.equal(evaluate('1 + 2 + 3 / 3', ctx()), 4)
-        assert.equal(evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8)
-        assert.equal(evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8)
-        assert.equal(evaluate('(1 + 2 +  3/3) :pow 2 / 2', ctx()), 8)
-        assert.equal(evaluate(' log10(100)  +2 -2', ctx()), 2)
-        assert.equal(evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()), 20)
+        assert.equal(calcjs.evaluate('1 + 2 + 3', ctx()).value, 6)
+        assert.equal(calcjs.evaluate('1 + 2 + 3 / 3', ctx()).value, 4)
+        assert.equal(calcjs.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8)
+        assert.equal(calcjs.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8)
+        assert.equal(calcjs.evaluate('(1 + 2 +  3/3) :pow 2 / 2', ctx()).value, 8)
+        assert.equal(calcjs.evaluate(' log10(100)  +2 -2', ctx()).value, 2)
+        assert.equal(calcjs.evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()).value, 20)
 
         // We'll use this example in the README:
-        assert.equal(evaluate(`
+        assert.equal(calcjs.evaluate(`
             foo = 2;
             bar = 4;
             wibble = foo * bar + pow(2, 10);
             foo + bar + wibble
-        `, ctx()), 1038)
+        `, ctx()).value, 1038)
 
     })
 

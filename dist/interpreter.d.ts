@@ -1,5 +1,7 @@
 import { Expression } from './expression';
+import { EvalError } from './errors';
 import { ExpressionOpts } from './parser';
+import { Result } from './result';
 /**
  * The context in which an expression will be evaluated.
  * This defines the variables, operators and functions that
@@ -22,4 +24,4 @@ export interface FunctionContext extends Context {
      */
     rawArgs: Expression[];
 }
-export declare function evaluate(expr: Expression, context: Context): any;
+export declare function evaluate(expr: Expression, context: Context): Result<unknown, EvalError>;

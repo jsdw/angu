@@ -1,7 +1,8 @@
 import * as interpreter from './interpreter';
-import * as libparser from './libparser';
+import * as errors from './errors';
 import { Result } from './result';
 export { Context, FunctionContext } from './interpreter';
+export { isOk, isErr } from './result';
 /**
  * Given an expression to evaluate in string form, and a context
  * to evaluate the expression against, return the result of
@@ -14,11 +15,4 @@ export declare function evaluate(input: string, context: interpreter.Context): R
  * contain an `input`, which is the remaining string at the time of
  * failure. They may contain more depending on their `kind`.
  */
-declare type EvaluationError = libparser.Err | {
-    kind: 'NOT_CONSUMED_ALL';
-    input: string;
-} | {
-    kind: 'INTERPRETER';
-    input: string;
-    error: any;
-};
+declare type EvaluationError = errors.ParseError | errors.EvalError | errors.InterpretError;

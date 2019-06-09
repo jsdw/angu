@@ -12,13 +12,13 @@ var parser = __importStar(require("./parser"));
 var result_1 = require("./result");
 describe('parser', function () {
     it('parses basic numbers properly', function () {
-        assert.deepEqual(parser.number().eval('1234'), result_1.ok(1234));
-        assert.deepEqual(parser.number().eval('1234.56'), result_1.ok(1234.56));
-        assert.deepEqual(parser.number().eval('1.21'), result_1.ok(1.21));
-        assert.deepEqual(parser.number().eval('-1.22'), result_1.ok(-1.22));
-        assert.deepEqual(parser.number().eval('+1.23'), result_1.ok(1.23));
-        assert.deepEqual(parser.number().eval('0.5'), result_1.ok(0.5));
-        assert.deepEqual(parser.number().eval('0.91'), result_1.ok(0.91));
+        assert.ok(result_1.isOk(parser.number().eval('1234')));
+        assert.ok(result_1.isOk(parser.number().eval('1234.56')));
+        assert.ok(result_1.isOk(parser.number().eval('1.21')));
+        assert.ok(result_1.isOk(parser.number().eval('-1.22')));
+        assert.ok(result_1.isOk(parser.number().eval('+1.23')));
+        assert.ok(result_1.isOk(parser.number().eval('0.5')));
+        assert.ok(result_1.isOk(parser.number().eval('0.91')));
         assert.ok(result_1.isErr(parser.number().eval('.91')));
         assert.ok(result_1.isErr(parser.number().eval('9.')));
         assert.ok(result_1.isErr(parser.number().eval('.')));
@@ -35,18 +35,18 @@ describe('parser', function () {
     });
     it('parses basic expression types', function () {
         var opts = {};
-        assert.deepEqual(parser.expression(opts).eval('true'), result_1.ok({ kind: 'bool', value: true }));
-        assert.deepEqual(parser.expression(opts).eval('false'), result_1.ok({ kind: 'bool', value: false }));
-        assert.deepEqual(parser.expression(opts).eval('foo'), result_1.ok({ kind: 'variable', name: 'foo' }));
-        assert.deepEqual(parser.expression(opts).eval('1.2'), result_1.ok({ kind: 'number', value: 1.2, string: '1.2' }));
-        assert.deepEqual(parser.expression(opts).eval('(foo)'), result_1.ok({ kind: 'variable', name: 'foo' }));
-        assert.deepEqual(parser.expression(opts).eval('( foo)'), result_1.ok({ kind: 'variable', name: 'foo' }));
-        assert.deepEqual(parser.expression(opts).eval('( foo )'), result_1.ok({ kind: 'variable', name: 'foo' }));
-        assert.deepEqual(parser.expression(opts).eval('(1.2 )'), result_1.ok({ kind: 'number', value: 1.2, string: '1.2' }));
+        assertRoughlyEqual(parser.expression(opts).eval('true'), result_1.ok({ kind: 'bool', value: true }));
+        assertRoughlyEqual(parser.expression(opts).eval('false'), result_1.ok({ kind: 'bool', value: false }));
+        assertRoughlyEqual(parser.expression(opts).eval('foo'), result_1.ok({ kind: 'variable', name: 'foo' }));
+        assertRoughlyEqual(parser.expression(opts).eval('1.2'), result_1.ok({ kind: 'number', value: 1.2, string: '1.2' }));
+        assertRoughlyEqual(parser.expression(opts).eval('(foo)'), result_1.ok({ kind: 'variable', name: 'foo' }));
+        assertRoughlyEqual(parser.expression(opts).eval('( foo)'), result_1.ok({ kind: 'variable', name: 'foo' }));
+        assertRoughlyEqual(parser.expression(opts).eval('( foo )'), result_1.ok({ kind: 'variable', name: 'foo' }));
+        assertRoughlyEqual(parser.expression(opts).eval('(1.2 )'), result_1.ok({ kind: 'number', value: 1.2, string: '1.2' }));
     });
     it('parses functions as operators by prefixing with ":"', function () {
         var opts = {};
-        assert.deepEqual(parser.expression(opts).parse('1 :foo 2'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).parse('1 :foo 2'), result_1.ok({
             output: {
                 kind: 'functioncall',
                 name: 'foo',
@@ -61,25 +61,25 @@ describe('parser', function () {
     });
     it('parses function calls', function () {
         var opts = {};
-        assert.deepEqual(parser.expression(opts).eval('foo()'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('foo()'), result_1.ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
             args: []
         }));
-        assert.deepEqual(parser.expression(opts).eval('foo(1)'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('foo(1)'), result_1.ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
             args: [{ kind: 'number', value: 1, string: '1' }]
         }));
-        assert.deepEqual(parser.expression(opts).eval('foo(((1)))'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('foo(((1)))'), result_1.ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
             args: [{ kind: 'number', value: 1, string: '1' }]
         }));
-        assert.deepEqual(parser.expression(opts).parse('foo(1, bar,2 , true )'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).parse('foo(1, bar,2 , true )'), result_1.ok({
             output: {
                 kind: 'functioncall',
                 name: 'foo',
@@ -96,7 +96,7 @@ describe('parser', function () {
     });
     it('parses binary ops taking precedence into account', function () {
         var opts = { precedence: [['^'], ['*'], ['+']] };
-        assert.deepEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), result_1.ok({
             kind: 'functioncall',
             name: '+',
             infix: true,
@@ -121,7 +121,7 @@ describe('parser', function () {
                 { kind: 'number', value: 6, string: '6' }
             ]
         }));
-        assert.deepEqual(parser.expression(opts).eval('3 + 4 * 5 ^ 6'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('3 + 4 * 5 ^ 6'), result_1.ok({
             kind: 'functioncall',
             name: '+',
             infix: true,
@@ -150,7 +150,7 @@ describe('parser', function () {
     it('always puts function ops first if no precedence given for them', function () {
         var opts = { precedence: [['*'], ['bar']] };
         // foo is evaluated first:
-        assert.deepEqual(parser.expression(opts).eval('5 * 3 :foo 2 * 4'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('5 * 3 :foo 2 * 4'), result_1.ok({
             kind: 'functioncall',
             name: '*',
             infix: true,
@@ -176,7 +176,7 @@ describe('parser', function () {
             ]
         }));
         // bar is evaluated last (it is listed last in precedence):
-        assert.deepEqual(parser.expression(opts).eval('5 * 3 :bar 2 * 4'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('5 * 3 :bar 2 * 4'), result_1.ok({
             kind: 'functioncall',
             name: 'bar',
             infix: true,
@@ -203,3 +203,21 @@ describe('parser', function () {
         }));
     });
 });
+function assertRoughlyEqual(a, b) {
+    // strip position information, since we don't want to have to manually add that:
+    stripPositionInformation(a);
+    stripPositionInformation(b);
+    assert.deepEqual(a, b);
+}
+function stripPositionInformation(a) {
+    if (typeof a === 'object') {
+        for (var i in a) {
+            if (i === 'pos') {
+                delete a[i];
+            }
+            else if (typeof a[i] === 'object') {
+                stripPositionInformation(a[i]);
+            }
+        }
+    }
+}

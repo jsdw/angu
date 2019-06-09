@@ -10,6 +10,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var interpreter = __importStar(require("./interpreter"));
 var parser = __importStar(require("./parser"));
 var result_1 = require("./result");
+var result_2 = require("./result");
+exports.isOk = result_2.isOk;
+exports.isErr = result_2.isErr;
 /**
  * Given an expression to evaluate in string form, and a context
  * to evaluate the expression against, return the result of
@@ -23,11 +26,6 @@ function evaluate(input, context) {
     if (parsed.value.rest.length) {
         return result_1.err({ kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest });
     }
-    try {
-        return interpreter.evaluate(parsed.value.output, context);
-    }
-    catch (e) {
-        return result_1.err({ kind: 'INTERPRETER', input: input, error: e });
-    }
+    return interpreter.evaluate(parsed.value.output, context);
 }
 exports.evaluate = evaluate;
