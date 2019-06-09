@@ -23,6 +23,16 @@ describe('parser', function () {
         assert.ok(result_1.isErr(parser.number().eval('9.')));
         assert.ok(result_1.isErr(parser.number().eval('.')));
     });
+    it('parses numbers in preference to unary ops', function () {
+        // Make sure '-' and '+' are treated as part of the number
+        // and not a unary op to apply.
+        assertRoughlyEqual(parser.expression({}).eval('-1'), result_1.ok({
+            kind: 'number', value: -1, string: '-1'
+        }));
+        assertRoughlyEqual(parser.expression({}).eval('+1'), result_1.ok({
+            kind: 'number', value: 1, string: '+1'
+        }));
+    });
     it('parses tokens properly', function () {
         assert.deepEqual(parser.token().eval('f'), result_1.ok('f'));
         assert.deepEqual(parser.token().eval('f_0'), result_1.ok('f_0'));
@@ -44,9 +54,9 @@ describe('parser', function () {
         assertRoughlyEqual(parser.expression(opts).eval('( foo )'), result_1.ok({ kind: 'variable', name: 'foo' }));
         assertRoughlyEqual(parser.expression(opts).eval('(1.2 )'), result_1.ok({ kind: 'number', value: 1.2, string: '1.2' }));
     });
-    it('parses functions as operators by prefixing with \'', function () {
+    it('parses functions as operators by surrounding with `', function () {
         var opts = {};
-        assertRoughlyEqual(parser.expression(opts).parse("1 'foo 2"), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).parse("1 `foo` 2"), result_1.ok({
             output: {
                 kind: 'functioncall',
                 name: 'foo',
@@ -57,6 +67,42 @@ describe('parser', function () {
                 ]
             },
             rest: ''
+        }));
+    });
+    it('parses unary ops', function () {
+        var opts = {};
+        assertRoughlyEqual(parser.expression(opts).eval('!foo'), result_1.ok({
+            kind: 'functioncall',
+            name: '!',
+            infix: true,
+            args: [{ kind: 'variable', name: 'foo' }]
+        }));
+        assertRoughlyEqual(parser.expression(opts).eval('!(-1)'), result_1.ok({
+            kind: 'functioncall',
+            name: '!',
+            infix: true,
+            args: [{ kind: 'number', value: -1, string: '-1' }]
+        }));
+        // Unary ops are not allowed to have any spaces between them and their
+        // argument, but '!-' cannot be next to each other or they will be seen
+        // as one op. We need parens to treat them as individual things.
+        assertRoughlyEqual(parser.expression(opts).eval('2 + !(-1)'), result_1.ok({
+            kind: 'functioncall',
+            name: '+',
+            infix: true,
+            args: [
+                {
+                    kind: 'number',
+                    value: 2,
+                    string: '2'
+                },
+                {
+                    kind: 'functioncall',
+                    name: '!',
+                    infix: true,
+                    args: [{ kind: 'number', value: -1, string: '-1' }]
+                }
+            ]
         }));
     });
     it('parses function calls', function () {
@@ -150,7 +196,7 @@ describe('parser', function () {
     it('always puts function ops first if no precedence given for them', function () {
         var opts = { precedence: [['*'], ['bar']] };
         // foo is evaluated first:
-        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 'foo 2 * 4"), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `foo` 2 * 4"), result_1.ok({
             kind: 'functioncall',
             name: '*',
             infix: true,
@@ -176,7 +222,7 @@ describe('parser', function () {
             ]
         }));
         // bar is evaluated last (it is listed last in precedence):
-        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 'bar 2 * 4"), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `bar` 2 * 4"), result_1.ok({
             kind: 'functioncall',
             name: 'bar',
             infix: true,

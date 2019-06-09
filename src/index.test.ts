@@ -12,12 +12,13 @@ describe('index', function(){
         // Define the functionality and such available to
         // the evaluator:
         const ctx: angu.Context = {
-            // We provide these operators:
+            // We provide these things in scope:
             scope: {
                 '-': (a: any, b: any) => a - b,
                 '+': (a: any, b: any) => a + b,
                 '/': (a: any, b: any) => a / b,
                 '*': (a: any, b: any) => a * b,
+                'PI': 3.14
             },
             // And define the precedence to be as expected:
             precedence: [
@@ -31,7 +32,8 @@ describe('index', function(){
         assert.equal(r1.value, 42)
         const r2 = angu.evaluate('10 + 4 / 2 * 3', ctx)
         assert.equal(r2.value, 16)
-
+        const r3 = angu.evaluate('PI * 2', ctx)
+        assert.equal(r3.value, 6.28)
     })
 
     it('can provide back error information when something goes wrong', () => {
@@ -171,7 +173,7 @@ describe('index', function(){
         assert.equal(angu.evaluate('1 + 2 + 3 / 3', ctx()).value, 4)
         assert.equal(angu.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8)
         assert.equal(angu.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8)
-        assert.equal(angu.evaluate("(1 + 2 +  3/3) 'pow 2 / 2", ctx()).value, 8)
+        assert.equal(angu.evaluate("(1 + 2 +  3/3) `pow` 2 / 2", ctx()).value, 8)
         assert.equal(angu.evaluate(' log10(100)  +2 -2', ctx()).value, 2)
         assert.equal(angu.evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()).value, 20)
 

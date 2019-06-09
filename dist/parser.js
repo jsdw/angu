@@ -10,7 +10,7 @@ var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
 var OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/;
 var WHITESPACE_REGEX = /\s/;
-var INFIX_TOK_PREFIX = "'";
+var INFIX_TOK_SURROUND = "`";
 /** Parse any expression, consuming surrounding space.This is the primary entry point: */
 function expression(opts) {
     // Convert opts to an internal format that's easier to work with.
@@ -52,8 +52,8 @@ exports.anyExpression = anyExpression;
 function binaryOpSubExpression(opts) {
     return parenExpression(opts)
         .or(functioncallExpression(opts))
-        .or(unaryOpExpression(opts))
         .or(numberExpression())
+        .or(unaryOpExpression(opts)) // try parsing number first, since numbers can by prefixed by + or -.
         .or(booleanExpression())
         .or(variableExpression());
 }
@@ -263,10 +263,17 @@ function op() {
     return libparser_1.default
         // An op is the valid op chars, or..
         .mustTakeWhile(OP_REGEX).map(function (s) { return ({ value: s, isOp: true }); })
-        // A token prefixed with the infix prefix
-        .or(libparser_1.default.matchString(INFIX_TOK_PREFIX).andThen(token).map(function (s) { return ({ value: s, isOp: false }); }));
+        // A token that's being used infix:
+        .or(infixFunction());
 }
 exports.op = op;
+function infixFunction() {
+    return libparser_1.default.matchString(INFIX_TOK_SURROUND)
+        .andThen(token)
+        .andThen(function (t) {
+        return libparser_1.default.matchString(INFIX_TOK_SURROUND).map(function (_) { return ({ value: t, isOp: false }); });
+    });
+}
 function ignoreWhitespace() {
     return libparser_1.default
         .takeWhile(WHITESPACE_REGEX)

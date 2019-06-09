@@ -7,7 +7,7 @@ const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
 const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/
 const WHITESPACE_REGEX = /\s/
-const INFIX_TOK_PREFIX = "'"
+const INFIX_TOK_SURROUND = "`"
 
 // Configure precedence of ops:
 
@@ -74,8 +74,8 @@ export function anyExpression(opts: InternalExpressionOpts): Parser<Expression> 
 export function binaryOpSubExpression(opts: InternalExpressionOpts): Parser<Expression> {
     return parenExpression(opts)
         .or(functioncallExpression(opts))
-        .or(unaryOpExpression(opts))
         .or(numberExpression())
+        .or(unaryOpExpression(opts)) // try parsing number first, since numbers can by prefixed by + or -.
         .or(booleanExpression())
         .or(variableExpression())
 }
@@ -287,8 +287,16 @@ export function op(): Parser<Op> {
     return Parser
         // An op is the valid op chars, or..
         .mustTakeWhile(OP_REGEX).map(s => ({ value: s, isOp: true }))
-        // A token prefixed with the infix prefix
-        .or(Parser.matchString(INFIX_TOK_PREFIX).andThen(token).map(s => ({ value: s, isOp: false })))
+        // A token that's being used infix:
+        .or(infixFunction())
+}
+
+function infixFunction(): Parser<Op> {
+    return Parser.matchString(INFIX_TOK_SURROUND)
+        .andThen(token)
+        .andThen(t => {
+            return Parser.matchString(INFIX_TOK_SURROUND).map(_ => ({ value: t, isOp: false }))
+        })
 }
 
 export function ignoreWhitespace(): Parser<void> {
