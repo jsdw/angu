@@ -1,4 +1,4 @@
-# Angu.
+# Angu
 
 A simple, versatile evaluator that can be used to implement and safely evaluate DSLs (Domain Specific Languages)
 in the browser. You have complete control over every operation performed, and this library takes care of the
