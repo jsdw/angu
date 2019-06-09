@@ -18,11 +18,16 @@ var result_1 = require("./result");
 function evaluate(input, context) {
     var parsed = parser.expression(context).parse(input);
     if (!result_1.isOk(parsed)) {
-        throw Error("Parse error: " + parsed.value);
+        return parsed;
     }
     if (parsed.value.rest.length) {
-        throw Error("Parse error: input string not entirely consumed");
+        return result_1.err({ kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest });
     }
-    return interpreter.evaluate(parsed.value.output, context);
+    try {
+        return interpreter.evaluate(parsed.value.output, context);
+    }
+    catch (e) {
+        return result_1.err({ kind: 'INTERPRETER', input: input, error: e });
+    }
 }
 exports.evaluate = evaluate;

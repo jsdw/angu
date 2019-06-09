@@ -10,10 +10,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var result = __importStar(require("./result"));
 var ErrKind;
 (function (ErrKind) {
-    ErrKind[ErrKind["MatchString"] = 0] = "MatchString";
-    ErrKind[ErrKind["MustTakeWhile"] = 1] = "MustTakeWhile";
-    ErrKind[ErrKind["MustSepBy"] = 2] = "MustSepBy";
-})(ErrKind || (ErrKind = {}));
+    ErrKind["MatchString"] = "MATCH_STRING";
+    ErrKind["MustTakeWhile"] = "MUST_TAKE_WHILE";
+    ErrKind["MustSepBy"] = "MUST_SEP_BY";
+})(ErrKind = exports.ErrKind || (exports.ErrKind = {}));
 var Parser = /** @class */ (function () {
     function Parser(_fn_) {
         this._fn_ = _fn_;
@@ -44,7 +44,7 @@ var Parser = /** @class */ (function () {
                 return result.ok({ output: s, rest: input.slice(s.length) });
             }
             else {
-                return result.err({ kind: ErrKind.MatchString, input: input });
+                return result.err({ kind: ErrKind.MatchString, expected: s, input: input });
             }
         });
     };

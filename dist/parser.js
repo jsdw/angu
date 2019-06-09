@@ -66,7 +66,7 @@ function variableExpression() {
 exports.variableExpression = variableExpression;
 function numberExpression() {
     return number().map(function (n) {
-        return { kind: 'number', value: n };
+        return { kind: 'number', value: Number(n), string: n };
     });
 }
 exports.numberExpression = numberExpression;
@@ -231,7 +231,7 @@ function number() {
         })
             .andThen(function (r) {
             nStr += r;
-            return libparser_1.default.ok(Number(nStr));
+            return libparser_1.default.ok(nStr);
         });
     });
 }

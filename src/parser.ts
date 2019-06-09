@@ -89,7 +89,7 @@ export function variableExpression(): Parser<Expression> {
 
 export function numberExpression(): Parser<Expression> {
     return number().map(n => {
-        return { kind: 'number', value: n }
+        return { kind: 'number', value: Number(n), string: n }
     })
 }
 
@@ -230,7 +230,7 @@ export function parenExpression(opts: InternalExpressionOpts): Parser<Expression
 
 // Helpful utility parsers:
 
-export function number(): Parser<number> {
+export function number(): Parser<string> {
     return Parser.lazy(() => {
         let nStr: string = ""
         return Parser.matchString('-')
@@ -254,7 +254,7 @@ export function number(): Parser<number> {
             })
             .andThen(r => {
                 nStr += r
-                return Parser.ok(Number(nStr))
+                return Parser.ok(nStr)
             })
     })
 }

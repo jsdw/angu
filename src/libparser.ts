@@ -6,15 +6,29 @@ type Input = string
 type ParseResult<T> = Result<{ output: T, rest: Input }, Err>
 type EvalResult<T> = Result<T, Err>
 
-type Err = {
-    kind: ErrKind
+export type Err
+    = ErrMatchString
+    | ErrMustTakeWhile
+    | ErrMustSepBy
+
+export type ErrMatchString = {
+    kind: ErrKind.MatchString
+    expected: string
+    input: Input
+}
+export type ErrMustTakeWhile = {
+    kind: ErrKind.MustTakeWhile
+    input: Input
+}
+export type ErrMustSepBy = {
+    kind: ErrKind.MustSepBy
     input: Input
 }
 
-enum ErrKind {
-    MatchString,
-    MustTakeWhile,
-    MustSepBy
+export enum ErrKind {
+    MatchString = 'MATCH_STRING',
+    MustTakeWhile = 'MUST_TAKE_WHILE',
+    MustSepBy = 'MUST_SEP_BY'
 }
 
 type Pattern
@@ -54,7 +68,7 @@ export default class Parser<T> {
             if (input.slice(0, s.length) === s) {
                 return result.ok({ output: s, rest: input.slice(s.length) })
             } else {
-                return result.err({ kind: ErrKind.MatchString, input })
+                return result.err({ kind: ErrKind.MatchString, expected: s, input })
             }
         })
     }

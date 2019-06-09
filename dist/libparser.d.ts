@@ -5,14 +5,24 @@ declare type ParseResult<T> = Result<{
     rest: Input;
 }, Err>;
 declare type EvalResult<T> = Result<T, Err>;
-declare type Err = {
-    kind: ErrKind;
+export declare type Err = ErrMatchString | ErrMustTakeWhile | ErrMustSepBy;
+export declare type ErrMatchString = {
+    kind: ErrKind.MatchString;
+    expected: string;
     input: Input;
 };
-declare enum ErrKind {
-    MatchString = 0,
-    MustTakeWhile = 1,
-    MustSepBy = 2
+export declare type ErrMustTakeWhile = {
+    kind: ErrKind.MustTakeWhile;
+    input: Input;
+};
+export declare type ErrMustSepBy = {
+    kind: ErrKind.MustSepBy;
+    input: Input;
+};
+export declare enum ErrKind {
+    MatchString = "MATCH_STRING",
+    MustTakeWhile = "MUST_TAKE_WHILE",
+    MustSepBy = "MUST_SEP_BY"
 }
 declare type Pattern = ((char: string) => boolean) | string | RegExp;
 export default class Parser<T> {

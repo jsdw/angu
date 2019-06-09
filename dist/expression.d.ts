@@ -6,6 +6,7 @@ export declare type ExprVariable = {
 export declare type ExprNumber = {
     kind: 'number';
     value: number;
+    string: string;
 };
 export declare type ExprBool = {
     kind: 'bool';

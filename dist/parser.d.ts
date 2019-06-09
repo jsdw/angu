@@ -37,7 +37,7 @@ export declare function unaryOpExpression(opts: InternalExpressionOpts): Parser<
 export declare function binaryOpExpression(opts: InternalExpressionOpts): Parser<Expression>;
 export declare function functioncallExpression(opts: InternalExpressionOpts): Parser<Expression>;
 export declare function parenExpression(opts: InternalExpressionOpts): Parser<Expression>;
-export declare function number(): Parser<number>;
+export declare function number(): Parser<string>;
 export declare function token(): Parser<string>;
 declare type Op = {
     value: string;

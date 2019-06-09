@@ -33,11 +33,11 @@ describe('parser', function() {
         assert.deepEqual(parser.expression(opts).eval('true'), ok({ kind: 'bool', value: true }))
         assert.deepEqual(parser.expression(opts).eval('false'), ok({ kind: 'bool', value: false }))
         assert.deepEqual(parser.expression(opts).eval('foo'), ok({ kind: 'variable', name: 'foo' }))
-        assert.deepEqual(parser.expression(opts).eval('1.2'), ok({ kind: 'number', value: 1.2 }))
+        assert.deepEqual(parser.expression(opts).eval('1.2'), ok({ kind: 'number', value: 1.2, string: '1.2' }))
         assert.deepEqual(parser.expression(opts).eval('(foo)'), ok({ kind: 'variable', name: 'foo' }))
         assert.deepEqual(parser.expression(opts).eval('( foo)'), ok({ kind: 'variable', name: 'foo' }))
         assert.deepEqual(parser.expression(opts).eval('( foo )'), ok({ kind: 'variable', name: 'foo' }))
-        assert.deepEqual(parser.expression(opts).eval('(1.2 )'), ok({ kind: 'number', value: 1.2 }))
+        assert.deepEqual(parser.expression(opts).eval('(1.2 )'), ok({ kind: 'number', value: 1.2, string: '1.2' }))
     })
 
     it('parses functions as operators by prefixing with ":"', () => {
@@ -48,8 +48,8 @@ describe('parser', function() {
                 name: 'foo',
                 infix: true,
                 args: [
-                    { kind: 'number', value: 1 },
-                    { kind: 'number', value: 2 }
+                    { kind: 'number', value: 1, string: '1' },
+                    { kind: 'number', value: 2, string: '2' }
                 ]
             },
             rest: ''
@@ -68,13 +68,13 @@ describe('parser', function() {
             kind: 'functioncall',
             name: 'foo',
             infix: false,
-            args: [{ kind: 'number', value: 1 }]
+            args: [{ kind: 'number', value: 1, string: '1' }]
         }))
         assert.deepEqual(parser.expression(opts).eval('foo(((1)))'), ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
-            args: [{ kind: 'number', value: 1 }]
+            args: [{ kind: 'number', value: 1, string: '1' }]
         }))
         assert.deepEqual(parser.expression(opts).parse('foo(1, bar,2 , true )'), ok({
             output: {
@@ -82,9 +82,9 @@ describe('parser', function() {
                 name: 'foo',
                 infix: false,
                 args: [
-                    { kind: 'number', value: 1 },
+                    { kind: 'number', value: 1, string: '1' },
                     { kind: 'variable', name: 'bar' },
-                    { kind: 'number', value: 2 },
+                    { kind: 'number', value: 2, string: '2' },
                     { kind: 'bool', value: true }
                 ]
             },
@@ -109,14 +109,14 @@ describe('parser', function() {
                             name: '^',
                             infix: true,
                             args: [
-                                { kind: 'number', value: 3 },
-                                { kind: 'number', value: 4 }
+                                { kind: 'number', value: 3, string: '3' },
+                                { kind: 'number', value: 4, string: '4' }
                             ]
                         },
-                        { kind: 'number', value: 5 }
+                        { kind: 'number', value: 5, string: '5' }
                     ]
                 },
-                { kind: 'number', value: 6 }
+                { kind: 'number', value: 6, string: '6' }
             ]
         }))
         assert.deepEqual(parser.expression(opts).eval('3 + 4 * 5 ^ 6'), ok({
@@ -124,20 +124,20 @@ describe('parser', function() {
             name: '+',
             infix: true,
             args: [
-                { kind: 'number', value: 3 },
+                { kind: 'number', value: 3, string: '3' },
                 {
                     kind: 'functioncall',
                     name: '*',
                     infix: true,
                     args: [
-                        { kind: 'number', value: 4 },
+                        { kind: 'number', value: 4, string: '4' },
                         {
                             kind: 'functioncall',
                             name: '^',
                             infix: true,
                             args: [
-                                { kind: 'number', value: 5 },
-                                { kind: 'number', value: 6 }
+                                { kind: 'number', value: 5, string: '5' },
+                                { kind: 'number', value: 6, string: '6' }
                             ]
                         }
                     ]
@@ -159,19 +159,19 @@ describe('parser', function() {
                     name: '*',
                     infix: true,
                     args: [
-                        { kind: 'number', value: 5 },
+                        { kind: 'number', value: 5, string: '5' },
                         {
                             kind: 'functioncall',
                             name: 'foo',
                             infix: true,
                             args: [
-                                { kind: 'number', value: 3 },
-                                { kind: 'number', value: 2 }
+                                { kind: 'number', value: 3, string: '3' },
+                                { kind: 'number', value: 2, string: '2' }
                             ]
                         }
                     ]
                 },
-                { kind: 'number', value: 4 }
+                { kind: 'number', value: 4, string: '4' }
             ]
         }))
         // bar is evaluated last (it is listed last in precedence):
@@ -185,8 +185,8 @@ describe('parser', function() {
                     name: '*',
                     infix: true,
                     args: [
-                        { kind: 'number', value: 5 },
-                        { kind: 'number', value: 3 }
+                        { kind: 'number', value: 5, string: '5' },
+                        { kind: 'number', value: 3, string: '3' }
                     ]
                 },
                 {
@@ -194,8 +194,8 @@ describe('parser', function() {
                     name: '*',
                     infix: true,
                     args: [
-                        { kind: 'number', value: 2 },
-                        { kind: 'number', value: 4 }
+                        { kind: 'number', value: 2, string: '2' },
+                        { kind: 'number', value: 4, string: '4' }
                     ]
                 }
             ]
