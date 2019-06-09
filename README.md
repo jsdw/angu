@@ -1,8 +1,10 @@
 # Angu
 
-A simple, versatile evaluator that can be used to implement and safely evaluate DSLs (Domain Specific Languages)
+A small library that can be used to implement and safely evaluate DSLs (Domain Specific Languages)
 in the browser. You have complete control over every operation performed, and this library takes care of the
 nitty gritty of the parsing and such.
+
+Zero dependencies, and comes with typescript typings (usage optional).
 
 We can use this to create a simple in-browser calculator to evaluate things like:
 
