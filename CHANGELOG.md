@@ -1,3 +1,16 @@
+# v0.3.0
+
+## Additions
+
+- Ops are now parsed based on what is provided in scope, so invalid ops will not parse, and valid
+  ops can parse unambiguously even when no spaces separate them.
+- All errors now contain consistent position information.
+
+## Breaking Changes
+
+- The type of error returned as aa result of an invalid op being used is now a parse error rather
+  than an evaluation error.
+
 # v0.2.1
 
 ## Bug Fixes
