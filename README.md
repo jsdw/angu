@@ -34,10 +34,10 @@ to the program and exactly what they do with their arguments, and this library t
 
 # Installation
 
-You can install the latest release directly from github using `npm`:
+You can install the latest release from `npm`:
 
 ```
-npm install jsdw/angu#v0.2.0
+npm install angu
 ```
 
 # Basic Usage
