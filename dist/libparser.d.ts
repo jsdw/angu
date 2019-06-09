@@ -22,7 +22,7 @@ export default class Parser<T> {
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
     static lazy<T>(fn: () => Parser<T>): Parser<T>;
     /** Return a parser that matches a given string */
-    static matchString(s: string): Parser<string>;
+    static matchString(...strings: string[]): Parser<string>;
     /** Take characters while the fn provided matches them to a max of n */
     static takeWhileN(n: number, pat: Pattern): Parser<string>;
     static takeWhile(pat: Pattern): Parser<string>;

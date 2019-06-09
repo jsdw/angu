@@ -1,4 +1,14 @@
 import { Expression } from './expression';
+/** The main error type returned */
+export declare type Error = ErrorWithoutPosition & WithPosition;
+declare type ErrorWithoutPosition = ParseError | EvalError | InterpretError;
+/** Position information for an error. All output errors have this. */
+declare type WithPosition = {
+    pos: {
+        start: number;
+        end: number;
+    };
+};
 /** Evaluation error */
 export declare type EvalError = EvalErrorThrow | EvalErrorNotAFunction | EvalErrorFunctionNotDefined;
 export declare type EvalErrorThrow = {
@@ -24,7 +34,7 @@ export declare type InterpretError = {
 export declare type ParseError = ParseErrorMatchString | ParseErrorMustTakeWhile | ParseErrorMustSepBy;
 export declare type ParseErrorMatchString = {
     kind: 'MATCH_STRING';
-    expected: string;
+    expectedOneOf: string[];
     input: string;
 };
 export declare type ParseErrorMustTakeWhile = {
@@ -35,3 +45,6 @@ export declare type ParseErrorMustSepBy = {
     kind: 'MUST_SEP_BY';
     input: string;
 };
+/** Given the original input string, this function adds position info to  */
+export declare function addPositionToError(fullInput: string, error: ErrorWithoutPosition): Error;
+export {};

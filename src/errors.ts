@@ -10,6 +10,21 @@ import { Expression } from './expression'
 // failure, so once again you can, given the original input string,
 // figure out exactly the point at which the error occurred.
 
+/** The main error type returned */
+export type Error = ErrorWithoutPosition & WithPosition
+type ErrorWithoutPosition
+    = ParseError
+    | EvalError
+    | InterpretError
+
+/** Position information for an error. All output errors have this. */
+type WithPosition = {
+    pos: {
+        start: number
+        end: number
+    }
+}
+
 /** Evaluation error */
 export type EvalError
     = EvalErrorThrow
@@ -45,7 +60,7 @@ export type ParseError
 
 export type ParseErrorMatchString = {
     kind: 'MATCH_STRING'
-    expected: string
+    expectedOneOf: string[]
     input: string
 }
 export type ParseErrorMustTakeWhile = {
@@ -55,4 +70,30 @@ export type ParseErrorMustTakeWhile = {
 export type ParseErrorMustSepBy = {
     kind: 'MUST_SEP_BY'
     input: string
+}
+
+/** Given the original input string, this function adds position info to  */
+export function addPositionToError(fullInput: string, error: ErrorWithoutPosition): Error {
+    let start: number
+    let end: number
+    switch(error.kind) {
+        case 'MATCH_STRING':
+        case 'MUST_TAKE_WHILE':
+        case 'MUST_SEP_BY':
+        case 'NOT_CONSUMED_ALL':
+            start = fullInput.length - error.input.length
+            end = start
+            return { ...error, pos: { start, end } }
+        case 'EVAL_THROW':
+        case 'FUNCTION_NOT_DEFINED':
+        case 'NOT_A_FUNCTION':
+            start = fullInput.length - error.expr.pos.startLen
+            end = fullInput.length - error.expr.pos.endLen
+            return { ...error, pos: { start, end } }
+    }
+    neverHappens(error)
+}
+
+function neverHappens(_: never): never {
+    throw new Error('Cannot happen')
 }

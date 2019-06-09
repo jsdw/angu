@@ -32,14 +32,19 @@ var Parser = /** @class */ (function () {
         });
     };
     /** Return a parser that matches a given string */
-    Parser.matchString = function (s) {
+    Parser.matchString = function () {
+        var strings = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            strings[_i] = arguments[_i];
+        }
         return new Parser(function (input) {
-            if (input.slice(0, s.length) === s) {
-                return result.ok({ output: s, rest: input.slice(s.length) });
+            for (var _i = 0, strings_1 = strings; _i < strings_1.length; _i++) {
+                var s = strings_1[_i];
+                if (input.slice(0, s.length) === s) {
+                    return result.ok({ output: s, rest: input.slice(s.length) });
+                }
             }
-            else {
-                return result.err({ kind: 'MATCH_STRING', expected: s, input: input });
-            }
+            return result.err({ kind: 'MATCH_STRING', expectedOneOf: strings, input: input });
         });
     };
     /** Take characters while the fn provided matches them to a max of n */

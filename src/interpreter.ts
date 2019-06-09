@@ -8,10 +8,7 @@ import { Result, ok, err, isOk } from './result'
  * This defines the variables, operators and functions that
  * are available to use.
  */
-export interface Context extends ExpressionOpts {
-    /** Variables and functions that the evaluator can use */
-    scope: { [name: string]: any }
-}
+export type Context = ExpressionOpts
 
 /**
  * This context is provided to any functions on scope that are called
@@ -37,7 +34,7 @@ export function evaluate(expr: Expression, context: Context): Result<unknown, Ev
 function evaluateVariable(expr: ExprVariable, context: Context): Result<unknown, EvalError> {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
-    const res = context.scope[expr.name] as unknown
+    const res = (context.scope || EMPTY)[expr.name] as unknown
     return typeof res === 'undefined'
         ? ok(expr.name)
         : ok(res)
@@ -52,7 +49,7 @@ function evaluateBool(expr: ExprBool, _context: Context): Result<unknown, EvalEr
 }
 
 function evaluateFunctioncall(expr: ExprFunctioncall, context: Context): Result<unknown, EvalError> {
-    const fn = context.scope[expr.name]
+    const fn = (context.scope || EMPTY)[expr.name]
     if (typeof fn === 'function') {
         const self = { context, rawArgs: expr.args }
         // Evaluate each arg before passing it in, threading out any errors:
@@ -88,3 +85,5 @@ function evaluateFunctioncall(expr: ExprFunctioncall, context: Context): Result<
         })
     }
 }
+
+const EMPTY = {}

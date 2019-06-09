@@ -9,6 +9,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var interpreter = __importStar(require("./interpreter"));
 var parser = __importStar(require("./parser"));
+var errors = __importStar(require("./errors"));
 var result_1 = require("./result");
 var result_2 = require("./result");
 exports.isOk = result_2.isOk;
@@ -21,11 +22,12 @@ exports.isErr = result_2.isErr;
 function evaluate(input, context) {
     var parsed = parser.expression(context).parse(input);
     if (!result_1.isOk(parsed)) {
-        return parsed;
+        return result_1.mapErr(parsed, function (e) { return errors.addPositionToError(input, e); });
     }
     if (parsed.value.rest.length) {
-        return result_1.err({ kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest });
+        var e = { kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest };
+        return result_1.err(errors.addPositionToError(input, e));
     }
-    return interpreter.evaluate(parsed.value.output, context);
+    return result_1.mapErr(interpreter.evaluate(parsed.value.output, context), function (e) { return errors.addPositionToError(input, e); });
 }
 exports.evaluate = evaluate;

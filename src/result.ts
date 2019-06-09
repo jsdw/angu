@@ -28,3 +28,11 @@ export function map<T1, T2, E>(result: Result<T1, E>, fn: (value: T1) => T2): Re
         return result
     }
 }
+
+export function mapErr<T, E1, E2>(result: Result<T, E1>, fn: (value: E1) => E2): Result<T, E2> {
+    if (isErr(result)) {
+        return err(fn(result.value))
+    } else {
+        return result
+    }
+}

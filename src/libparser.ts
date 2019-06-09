@@ -44,13 +44,14 @@ export default class Parser<T> {
     }
 
     /** Return a parser that matches a given string */
-    static matchString(s: string): Parser<string> {
+    static matchString(...strings: string[]): Parser<string> {
         return new Parser(input => {
-            if (input.slice(0, s.length) === s) {
-                return result.ok({ output: s, rest: input.slice(s.length) })
-            } else {
-                return result.err({ kind: 'MATCH_STRING', expected: s, input })
+            for(const s of strings) {
+                if (input.slice(0, s.length) === s) {
+                    return result.ok({ output: s, rest: input.slice(s.length) })
+                }
             }
+            return result.err({ kind: 'MATCH_STRING', expectedOneOf: strings, input })
         })
     }
 

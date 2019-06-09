@@ -73,8 +73,9 @@ const r1 = evaluate('2 + 10 * 4', ctx)
 assert.equal(r1.value, 42)
 ```
 
-If something goes wrong evaluating the provided string, an error will be returned. Errors contain
-the position information and so on to feed back to the user exactly what's gone wrong.
+If something goes wrong evaluating the provided string, an error will be returned. All errors returned
+contain position information (`{ pos: { start, end} }`) describing the beginning and end of the string
+that contains the error. Specific errors contain other information depending on their `kind`.
 
 [More examples can be found here](https://github.com/jsdw/angu/blob/master/src/index.test.ts).
 
@@ -85,10 +86,13 @@ the position information and so on to feed back to the user exactly what's gone 
 Any of the following characters can be used to define an operator:
 
 ```
-!£$%^&*@#~?<>|/\+=;:-
+!£$%^&*@#~?<>|/+=;:-
 ```
 
 Operators can be binary (taking two arguments) or unary.
+
+Operators not defined in scope will not be parsed. This allows the parser to properly handle multiple operators without any
+spaces separating them; it knows exactly what to look out for.
 
 ## Functions/variables
 

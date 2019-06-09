@@ -2,6 +2,8 @@ import * as assert from 'assert'
 import * as parser from './parser'
 import { ok, isOk, isErr } from './result'
 
+const ID = (a: any) => a
+
 describe('parser', function() {
 
     it('parses basic numbers properly', () => {
@@ -68,23 +70,25 @@ describe('parser', function() {
     })
 
     it('parses unary ops', () => {
-        const opts = { }
+        const opts = {
+            // The ops we want to use have to exist on scope:
+            scope: { '!': ID, '+': ID }
+        }
         assertRoughlyEqual(parser.expression(opts).eval('!foo'), ok({
             kind: 'functioncall',
             name: '!',
             infix: true,
             args: [{ kind: 'variable', name: 'foo' }]
         }))
-        assertRoughlyEqual(parser.expression(opts).eval('!(-1)'), ok({
+        // Because we parse ops based on what's in scope, we can unambiguously
+        // parse multiple op chars next to each other:
+        assertRoughlyEqual(parser.expression(opts).eval('!-1)'), ok({
             kind: 'functioncall',
             name: '!',
             infix: true,
             args: [{ kind: 'number', value: -1, string: '-1' }]
         }))
-        // Unary ops are not allowed to have any spaces between them and their
-        // argument, but '!-' cannot be next to each other or they will be seen
-        // as one op. We need parens to treat them as individual things.
-        assertRoughlyEqual(parser.expression(opts).eval('2 + !(-1)'), ok({
+        assertRoughlyEqual(parser.expression(opts).eval('2 + !-1'), ok({
             kind: 'functioncall',
             name: '+',
             infix: true,
@@ -141,7 +145,10 @@ describe('parser', function() {
     })
 
     it('parses binary ops taking precedence into account', () => {
-        const opts = { precedence: [['^'], ['*'], ['+']] }
+        const opts = {
+            scope: { '^': ID, '+': ID, '*': ID },
+            precedence: [['^'], ['*'], ['+']]
+        }
         assertRoughlyEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), ok({
             kind: 'functioncall',
             name: '+',
@@ -195,7 +202,10 @@ describe('parser', function() {
     })
 
     it('always puts function ops first if no precedence given for them', () => {
-        const opts = { precedence: [['*'], ['bar']] }
+        const opts = {
+            scope: { '*': ID },
+            precedence: [['*'], ['bar']]
+        }
         // foo is evaluated first:
         assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `foo` 2 * 4"), ok({
             kind: 'functioncall',

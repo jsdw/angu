@@ -5,7 +5,7 @@ import { isOk } from './result';
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
-const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/
+const OP_REGEX = /[!£$%^&*@#~?<>|/+=;:-]/
 const WHITESPACE_REGEX = /\s/
 const INFIX_TOK_SURROUND = "`"
 
@@ -21,6 +21,8 @@ export interface ExpressionOpts {
      * that is defined.
      */
     precedence?: ({ ops: string[], associativity?: 'right' | 'left' } | string[])[]
+    /** Variables and functions that are in scope during evaluation */
+    scope?: { [name: string]: any }
 }
 
 type InternalExpressionOpts = {
@@ -28,6 +30,8 @@ type InternalExpressionOpts = {
     precedence: PrecedenceMap
     /** Is the operator left or right associative? Default left */
     associativity: AssociativityMap
+    /** A sorted list of valid ops to try parsing */
+    ops: string[]
 }
 
 type PrecedenceMap = { [op: string]: number }
@@ -54,9 +58,33 @@ export function expression(opts: ExpressionOpts): Parser<Expression> {
         precedenceValue--
     }
 
+    // Look through scope to find all valid ops that have been declared.
+    // We can then parse  exactly those, rejecting characters that aren't declared.
+    // sort them longest first so we match most specific first.
+    const scope = opts.scope || {}
+    const validOps: string[] = []
+    for (const key in scope) {
+        // The op in scope must be a function:
+        if (typeof scope[key] !== 'function') {
+            continue
+        }
+        // Each character must be a valid op charatcer:
+        for(let i = 0; i < key.length; i++) {
+            const char = key.charAt(i)
+            if (!OP_REGEX.test(char)) continue
+        }
+        validOps.push(key)
+    }
+    validOps.sort((a, b) => {
+        return a.length > b.length ? -1
+        : a.length < b.length ? 1
+        : 0
+    })
+
     return anyExpression({
         precedence: precedenceMap,
-        associativity: associativityMap
+        associativity: associativityMap,
+        ops: validOps
     })
 }
 
@@ -107,7 +135,7 @@ export function booleanExpression(): Parser<Expression> {
 }
 
 export function unaryOpExpression(opts: InternalExpressionOpts): Parser<Expression> {
-    return op().andThen(op => {
+    return op(opts.ops).andThen(op => {
         return anyExpression(opts).mapWithPosition((expr, pos) => {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos }
         })
@@ -120,7 +148,7 @@ export function binaryOpExpression(opts: InternalExpressionOpts): Parser<Express
 
     // ops separate the expressions:
     const sep = ignoreWhitespace()
-        .andThen(_ => op())
+        .andThen(_ => op(opts.ops))
         .andThen(op => {
             return ignoreWhitespace().map(_ => op)
         })
@@ -283,11 +311,11 @@ export function token(): Parser<string> {
 }
 
 type Op = { value: string, isOp: boolean }
-export function op(): Parser<Op> {
+export function op(opList: string[]): Parser<Op> {
     return Parser
-        // An op is the valid op chars, or..
-        .mustTakeWhile(OP_REGEX).map(s => ({ value: s, isOp: true }))
-        // A token that's being used infix:
+        // An op is either a valid op that's been provided on scope, or..
+        .matchString(...opList).map(s => ({ value: s, isOp: true }))
+        // ..a token that's being used infix:
         .or(infixFunction())
 }
 

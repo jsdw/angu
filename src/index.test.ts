@@ -55,16 +55,16 @@ describe('index', function(){
         assert.ok(angu.isErr(r1))
         assert.ok(!angu.isOk(r1))
 
-        // We can see manually that it is an error, and the error
-        // kind specifies that the function is not defined:
+        // Because the operator doesn't exist, we get a parse error as
+        // the string could not be entirely consumed, along with the part
+        // of the string that was not consumed:
         assert.equal(r1.kind, 'err')
-        assert.equal(r1.value.kind, 'FUNCTION_NOT_DEFINED')
+        assert.equal(r1.value.kind, 'NOT_CONSUMED_ALL')
+        assert.equal(r1.value.input, '* 4 + 2')
 
-        // The error region is '10 * 4'. Total length of string
-        // is 10, so starting length at error is 10, end length is 4
-        // since the end of the string after the error is 4.
-        assert.equal(r1.value.expr.pos.startLen, 10)
-        assert.equal(r1.value.expr.pos.endLen, 4)
+        // parse errors occur at a specific point, so start == end:
+        assert.equal(r1.value.pos.start, 3)
+        assert.equal(r1.value.pos.end, 3)
 
         // Everything is typed, so you can look at the errors defined
         // in `errors.ts` in order to see exactly what's available in

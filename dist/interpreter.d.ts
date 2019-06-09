@@ -7,12 +7,7 @@ import { Result } from './result';
  * This defines the variables, operators and functions that
  * are available to use.
  */
-export interface Context extends ExpressionOpts {
-    /** Variables and functions that the evaluator can use */
-    scope: {
-        [name: string]: any;
-    };
-}
+export declare type Context = ExpressionOpts;
 /**
  * This context is provided to any functions on scope that are called
  * by the interpreter.

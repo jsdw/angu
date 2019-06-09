@@ -13,7 +13,7 @@ exports.evaluate = evaluate;
 function evaluateVariable(expr, context) {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
-    var res = context.scope[expr.name];
+    var res = (context.scope || EMPTY)[expr.name];
     return typeof res === 'undefined'
         ? result_1.ok(expr.name)
         : result_1.ok(res);
@@ -25,7 +25,7 @@ function evaluateBool(expr, _context) {
     return result_1.ok(expr.value);
 }
 function evaluateFunctioncall(expr, context) {
-    var fn = context.scope[expr.name];
+    var fn = (context.scope || EMPTY)[expr.name];
     if (typeof fn === 'function') {
         var self_1 = { context: context, rawArgs: expr.args };
         // Evaluate each arg before passing it in, threading out any errors:
@@ -66,3 +66,4 @@ function evaluateFunctioncall(expr, context) {
         });
     }
 }
+var EMPTY = {};

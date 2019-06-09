@@ -8,7 +8,7 @@ var result_1 = require("./result");
 var NUMBER_REGEX = /[0-9]/;
 var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
-var OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/;
+var OP_REGEX = /[!£$%^&*@#~?<>|/+=;:-]/;
 var WHITESPACE_REGEX = /\s/;
 var INFIX_TOK_SURROUND = "`";
 /** Parse any expression, consuming surrounding space.This is the primary entry point: */
@@ -33,9 +33,33 @@ function expression(opts) {
         }
         precedenceValue--;
     }
+    // Look through scope to find all valid ops that have been declared.
+    // We can then parse  exactly those, rejecting characters that aren't declared.
+    // sort them longest first so we match most specific first.
+    var scope = opts.scope || {};
+    var validOps = [];
+    for (var key in scope) {
+        // The op in scope must be a function:
+        if (typeof scope[key] !== 'function') {
+            continue;
+        }
+        // Each character must be a valid op charatcer:
+        for (var i = 0; i < key.length; i++) {
+            var char = key.charAt(i);
+            if (!OP_REGEX.test(char))
+                continue;
+        }
+        validOps.push(key);
+    }
+    validOps.sort(function (a, b) {
+        return a.length > b.length ? -1
+            : a.length < b.length ? 1
+                : 0;
+    });
     return anyExpression({
         precedence: precedenceMap,
-        associativity: associativityMap
+        associativity: associativityMap,
+        ops: validOps
     });
 }
 exports.expression = expression;
@@ -84,7 +108,7 @@ function booleanExpression() {
 }
 exports.booleanExpression = booleanExpression;
 function unaryOpExpression(opts) {
-    return op().andThen(function (op) {
+    return op(opts.ops).andThen(function (op) {
         return anyExpression(opts).mapWithPosition(function (expr, pos) {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos: pos };
         });
@@ -96,7 +120,7 @@ function binaryOpExpression(opts) {
     var associativity = opts.associativity || {};
     // ops separate the expressions:
     var sep = ignoreWhitespace()
-        .andThen(function (_) { return op(); })
+        .andThen(function (_) { return op(opts.ops); })
         .andThen(function (op) {
         return ignoreWhitespace().map(function (_) { return op; });
     });
@@ -259,11 +283,13 @@ function token() {
     });
 }
 exports.token = token;
-function op() {
+function op(opList) {
     return libparser_1.default
-        // An op is the valid op chars, or..
-        .mustTakeWhile(OP_REGEX).map(function (s) { return ({ value: s, isOp: true }); })
-        // A token that's being used infix:
+        // An op is either a valid op that's been provided on scope, or..
+        .matchString.apply(libparser_1.default
+    // An op is either a valid op that's been provided on scope, or..
+    , opList).map(function (s) { return ({ value: s, isOp: true }); })
+        // ..a token that's being used infix:
         .or(infixFunction());
 }
 exports.op = op;

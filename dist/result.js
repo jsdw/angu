@@ -25,3 +25,12 @@ function map(result, fn) {
     }
 }
 exports.map = map;
+function mapErr(result, fn) {
+    if (isErr(result)) {
+        return err(fn(result.value));
+    }
+    else {
+        return result;
+    }
+}
+exports.mapErr = mapErr;

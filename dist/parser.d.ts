@@ -13,12 +13,18 @@ export interface ExpressionOpts {
         ops: string[];
         associativity?: 'right' | 'left';
     } | string[])[];
+    /** Variables and functions that are in scope during evaluation */
+    scope?: {
+        [name: string]: any;
+    };
 }
 declare type InternalExpressionOpts = {
     /** A map from op name to precedence. Higher = tighter binding. Default 5 */
     precedence: PrecedenceMap;
     /** Is the operator left or right associative? Default left */
     associativity: AssociativityMap;
+    /** A sorted list of valid ops to try parsing */
+    ops: string[];
 };
 declare type PrecedenceMap = {
     [op: string]: number;
@@ -43,6 +49,6 @@ declare type Op = {
     value: string;
     isOp: boolean;
 };
-export declare function op(): Parser<Op>;
+export declare function op(opList: string[]): Parser<Op>;
 export declare function ignoreWhitespace(): Parser<void>;
 export {};

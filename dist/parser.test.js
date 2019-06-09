@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var parser = __importStar(require("./parser"));
 var result_1 = require("./result");
+var ID = function (a) { return a; };
 describe('parser', function () {
     it('parses basic numbers properly', function () {
         assert.ok(result_1.isOk(parser.number().eval('1234')));
@@ -70,23 +71,25 @@ describe('parser', function () {
         }));
     });
     it('parses unary ops', function () {
-        var opts = {};
+        var opts = {
+            // The ops we want to use have to exist on scope:
+            scope: { '!': ID, '+': ID }
+        };
         assertRoughlyEqual(parser.expression(opts).eval('!foo'), result_1.ok({
             kind: 'functioncall',
             name: '!',
             infix: true,
             args: [{ kind: 'variable', name: 'foo' }]
         }));
-        assertRoughlyEqual(parser.expression(opts).eval('!(-1)'), result_1.ok({
+        // Because we parse ops based on what's in scope, we can unambiguously
+        // parse multiple op chars next to each other:
+        assertRoughlyEqual(parser.expression(opts).eval('!-1)'), result_1.ok({
             kind: 'functioncall',
             name: '!',
             infix: true,
             args: [{ kind: 'number', value: -1, string: '-1' }]
         }));
-        // Unary ops are not allowed to have any spaces between them and their
-        // argument, but '!-' cannot be next to each other or they will be seen
-        // as one op. We need parens to treat them as individual things.
-        assertRoughlyEqual(parser.expression(opts).eval('2 + !(-1)'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('2 + !-1'), result_1.ok({
             kind: 'functioncall',
             name: '+',
             infix: true,
@@ -141,7 +144,10 @@ describe('parser', function () {
         }));
     });
     it('parses binary ops taking precedence into account', function () {
-        var opts = { precedence: [['^'], ['*'], ['+']] };
+        var opts = {
+            scope: { '^': ID, '+': ID, '*': ID },
+            precedence: [['^'], ['*'], ['+']]
+        };
         assertRoughlyEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), result_1.ok({
             kind: 'functioncall',
             name: '+',
@@ -194,7 +200,10 @@ describe('parser', function () {
         }));
     });
     it('always puts function ops first if no precedence given for them', function () {
-        var opts = { precedence: [['*'], ['bar']] };
+        var opts = {
+            scope: { '*': ID },
+            precedence: [['*'], ['bar']]
+        };
         // foo is evaluated first:
         assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `foo` 2 * 4"), result_1.ok({
             kind: 'functioncall',
