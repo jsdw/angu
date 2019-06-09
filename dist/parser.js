@@ -8,8 +8,9 @@ var result_1 = require("./result");
 var NUMBER_REGEX = /[0-9]/;
 var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
-var OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;-]/;
+var OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/;
 var WHITESPACE_REGEX = /\s/;
+var INFIX_TOK_PREFIX = "'";
 /** Parse any expression, consuming surrounding space.This is the primary entry point: */
 function expression(opts) {
     // Convert opts to an internal format that's easier to work with.
@@ -59,32 +60,33 @@ function binaryOpSubExpression(opts) {
 exports.binaryOpSubExpression = binaryOpSubExpression;
 // Parse different types of expression:
 function variableExpression() {
-    return token().map(function (tok) {
-        return { kind: 'variable', name: tok };
+    return token().mapWithPosition(function (tok, pos) {
+        return { kind: 'variable', name: tok, pos: pos };
     });
 }
 exports.variableExpression = variableExpression;
 function numberExpression() {
-    return number().map(function (n) {
-        return { kind: 'number', value: n };
+    return number().mapWithPosition(function (n, pos) {
+        return { kind: 'number', value: Number(n), string: n, pos: pos };
     });
 }
 exports.numberExpression = numberExpression;
 function booleanExpression() {
     return libparser_1.default.matchString('true')
         .or(libparser_1.default.matchString('false'))
-        .map(function (boolStr) {
+        .mapWithPosition(function (boolStr, pos) {
         return {
             kind: 'bool',
-            value: boolStr === 'true' ? true : false
+            value: boolStr === 'true' ? true : false,
+            pos: pos
         };
     });
 }
 exports.booleanExpression = booleanExpression;
 function unaryOpExpression(opts) {
     return op().andThen(function (op) {
-        return anyExpression(opts).map(function (expr) {
-            return { kind: 'functioncall', name: op.value, args: [expr], infix: true };
+        return anyExpression(opts).mapWithPosition(function (expr, pos) {
+            return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos: pos };
         });
     });
 }
@@ -151,7 +153,13 @@ function binaryOpExpression(opts) {
             var op_2 = separators.splice(idx, 1)[0];
             var left = results[idx];
             var right = results[idx + 1];
-            var expr = { kind: 'functioncall', name: op_2.value, args: [left, right], infix: true };
+            var expr = {
+                kind: 'functioncall',
+                name: op_2.value,
+                args: [left, right],
+                infix: true,
+                pos: { startLen: left.pos.startLen, endLen: right.pos.endLen }
+            };
             results.splice(idx, 2, expr);
         }
         return results[0];
@@ -182,8 +190,8 @@ function functioncallExpression(opts) {
                 .andThen(function (_) { return libparser_1.default.matchString(')'); })
                 .map(function (_) { return r; });
         })
-            .map(function (args) {
-            return { kind: 'functioncall', name: name, args: args, infix: false };
+            .mapWithPosition(function (args, pos) {
+            return { kind: 'functioncall', name: name, args: args, infix: false, pos: pos };
         });
     });
 }
@@ -231,7 +239,7 @@ function number() {
         })
             .andThen(function (r) {
             nStr += r;
-            return libparser_1.default.ok(Number(nStr));
+            return libparser_1.default.ok(nStr);
         });
     });
 }
@@ -255,8 +263,8 @@ function op() {
     return libparser_1.default
         // An op is the valid op chars, or..
         .mustTakeWhile(OP_REGEX).map(function (s) { return ({ value: s, isOp: true }); })
-        // A token prefixed with ':'
-        .or(libparser_1.default.matchString(":").andThen(token).map(function (s) { return ({ value: s, isOp: false }); }));
+        // A token prefixed with the infix prefix
+        .or(libparser_1.default.matchString(INFIX_TOK_PREFIX).andThen(token).map(function (s) { return ({ value: s, isOp: false }); }));
 }
 exports.op = op;
 function ignoreWhitespace() {

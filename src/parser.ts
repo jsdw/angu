@@ -5,8 +5,9 @@ import { isOk } from './result';
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
-const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;-]/
+const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/
 const WHITESPACE_REGEX = /\s/
+const INFIX_TOK_PREFIX = "'"
 
 // Configure precedence of ops:
 
@@ -82,32 +83,33 @@ export function binaryOpSubExpression(opts: InternalExpressionOpts): Parser<Expr
 // Parse different types of expression:
 
 export function variableExpression(): Parser<Expression> {
-    return token().map(tok => {
-        return { kind: 'variable', name: tok }
+    return token().mapWithPosition((tok, pos) => {
+        return { kind: 'variable', name: tok, pos }
     })
 }
 
 export function numberExpression(): Parser<Expression> {
-    return number().map(n => {
-        return { kind: 'number', value: n }
+    return number().mapWithPosition((n, pos) => {
+        return { kind: 'number', value: Number(n), string: n, pos }
     })
 }
 
 export function booleanExpression(): Parser<Expression> {
     return Parser.matchString('true')
         .or(Parser.matchString('false'))
-        .map(boolStr => {
+        .mapWithPosition((boolStr, pos) => {
             return {
                 kind: 'bool',
-                value: boolStr === 'true' ? true : false
+                value: boolStr === 'true' ? true : false,
+                pos
             }
         })
 }
 
 export function unaryOpExpression(opts: InternalExpressionOpts): Parser<Expression> {
     return op().andThen(op => {
-        return anyExpression(opts).map(expr => {
-            return { kind: 'functioncall', name: op.value, args: [expr], infix: true }
+        return anyExpression(opts).mapWithPosition((expr, pos) => {
+            return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos }
         })
     })
 }
@@ -177,7 +179,13 @@ export function binaryOpExpression(opts: InternalExpressionOpts): Parser<Express
                 const op = separators.splice(idx, 1)[0]
                 const left = results[idx]
                 const right = results[idx+1]
-                const expr: Expression = { kind: 'functioncall', name: op.value, args: [ left, right ], infix: true }
+                const expr: Expression = {
+                    kind: 'functioncall',
+                    name: op.value,
+                    args: [ left, right ],
+                    infix: true,
+                    pos: { startLen: left.pos.startLen, endLen: right.pos.endLen }
+                }
                 results.splice(idx, 2, expr)
             }
             return results[0]
@@ -206,8 +214,8 @@ export function functioncallExpression(opts: InternalExpressionOpts): Parser<Exp
                     .andThen(_ => Parser.matchString(')'))
                     .map(_ => r)
             })
-            .map(args => {
-                return { kind: 'functioncall', name, args, infix: false }
+            .mapWithPosition((args, pos) => {
+                return { kind: 'functioncall', name, args, infix: false, pos }
             })
     })
 
@@ -230,7 +238,7 @@ export function parenExpression(opts: InternalExpressionOpts): Parser<Expression
 
 // Helpful utility parsers:
 
-export function number(): Parser<number> {
+export function number(): Parser<string> {
     return Parser.lazy(() => {
         let nStr: string = ""
         return Parser.matchString('-')
@@ -254,7 +262,7 @@ export function number(): Parser<number> {
             })
             .andThen(r => {
                 nStr += r
-                return Parser.ok(Number(nStr))
+                return Parser.ok(nStr)
             })
     })
 }
@@ -279,8 +287,8 @@ export function op(): Parser<Op> {
     return Parser
         // An op is the valid op chars, or..
         .mustTakeWhile(OP_REGEX).map(s => ({ value: s, isOp: true }))
-        // A token prefixed with ':'
-        .or(Parser.matchString(":").andThen(token).map(s => ({ value: s, isOp: false })))
+        // A token prefixed with the infix prefix
+        .or(Parser.matchString(INFIX_TOK_PREFIX).andThen(token).map(s => ({ value: s, isOp: false })))
 }
 
 export function ignoreWhitespace(): Parser<void> {

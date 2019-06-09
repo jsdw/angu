@@ -1,20 +1,15 @@
 import * as result from './result'
 import { Result } from './result'
+import { ParseError } from './errors'
 
-type Input = string
+type ParseResult<T> = Result<{ output: T, rest: string }, ParseError>
+type EvalResult<T> = Result<T, ParseError>
 
-type ParseResult<T> = Result<{ output: T, rest: Input }, Err>
-type EvalResult<T> = Result<T, Err>
-
-type Err = {
-    kind: ErrKind
-    input: Input
-}
-
-enum ErrKind {
-    MatchString,
-    MustTakeWhile,
-    MustSepBy
+export type Pos = {
+    /** How long is the input string at the start of parsing? */
+    startLen: number,
+    /** How long is the input string at the end of parsing? */
+    endLen: number
 }
 
 type Pattern
@@ -23,14 +18,14 @@ type Pattern
     | RegExp
 
 export default class Parser<T> {
-    private constructor(readonly _fn_: (input: Input) => ParseResult<T>) {}
+    private constructor(readonly _fn_: (input: string) => ParseResult<T>) {}
 
-    eval(input: Input): EvalResult<T> {
+    eval(input: string): EvalResult<T> {
         const res = this._fn_(input)
         return result.map(res, val => val.output)
     }
 
-    parse(input: Input): ParseResult<T> {
+    parse(input: string): ParseResult<T> {
         return this._fn_(input)
     }
 
@@ -49,12 +44,12 @@ export default class Parser<T> {
     }
 
     /** Return a parser that matches a given string */
-    static matchString(s: Input): Parser<string> {
+    static matchString(s: string): Parser<string> {
         return new Parser(input => {
             if (input.slice(0, s.length) === s) {
                 return result.ok({ output: s, rest: input.slice(s.length) })
             } else {
-                return result.err({ kind: ErrKind.MatchString, input })
+                return result.err({ kind: 'MATCH_STRING', expected: s, input })
             }
         })
     }
@@ -83,7 +78,7 @@ export default class Parser<T> {
         return new Parser(input => {
             const res = Parser.takeWhileN(n, pat).parse(input)
             if (result.isOk(res) && !res.value.output.length) {
-                return result.err({ kind: ErrKind.MustTakeWhile, input })
+                return result.err({ kind: 'MUST_TAKE_WHILE', input })
             } else {
                 return res
             }
@@ -94,8 +89,19 @@ export default class Parser<T> {
         return Parser.mustTakeWhileN(Infinity, pat)
     }
 
+    /** Run this on a parser to peek at the available position information (distances from end) */
+    mapWithPosition<T2>(fn: (res: T, pos: Pos) => T2): Parser<T2> {
+        return new Parser(input => {
+            return result.map(this.parse(input), val => {
+                const startLen = input.length
+                const endLen = val.rest.length
+                return { output: fn(val.output, { startLen, endLen }), rest: val.rest }
+            })
+        })
+    }
+
     /** Make the success of this parser optional */
-    optional(): Parser<Result<T, Err>> {
+    optional(): Parser<Result<T, ParseError>> {
         return new Parser(input => {
             const res = this.parse(input)
             if (result.isOk(res)) {
@@ -175,7 +181,7 @@ export default class Parser<T> {
         return new Parser(input => {
             const res = this.sepBy(sep).parse(input)
             if (result.isOk(res) && !res.value.output.separators.length) {
-                return result.err({ kind: ErrKind.MustSepBy, input })
+                return result.err({ kind: 'MUST_SEP_BY', input })
             } else {
                 return res
             }

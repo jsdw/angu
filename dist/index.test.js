@@ -8,7 +8,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
-var index_1 = require("./index");
+var calcjs = __importStar(require("./index"));
+// This file primarily serves to show what sorts of things
+// you can do using this library. each `it` case is another
+// completely self-contained example.
 describe('index', function () {
     it('can be used to create a simple calculator', function () {
         // Define the functionality and such available to
@@ -28,10 +31,93 @@ describe('index', function () {
             ]
         };
         // Now, we can evaluate things in this context:
-        var r1 = index_1.evaluate('2 + 10 * 4', ctx);
-        assert.equal(r1, 42);
-        var r2 = index_1.evaluate('10 + 4 / 2 * 3', ctx);
-        assert.equal(r2, 16);
+        var r1 = calcjs.evaluate('2 + 10 * 4', ctx);
+        assert.equal(r1.value, 42);
+        var r2 = calcjs.evaluate('10 + 4 / 2 * 3', ctx);
+        assert.equal(r2.value, 16);
+    });
+    it('can provide back error information when something goes wrong', function () {
+        // Define the functionality and such available to
+        // the evaluator:
+        var ctx = {
+            // We provide these operators:
+            scope: {
+                '-': function (a, b) { return a - b; },
+                '+': function (a, b) { return a + b; }
+            }
+        };
+        // This will be an error because * is not defined:
+        var r1 = calcjs.evaluate('10 * 4 + 2', ctx);
+        // We can use a convenience function to check error/ok:
+        assert.ok(calcjs.isErr(r1));
+        assert.ok(!calcjs.isOk(r1));
+        // We can see manually that it is an error, and the error
+        // kind specifies that the function is not defined:
+        assert.equal(r1.kind, 'err');
+        assert.equal(r1.value.kind, 'FUNCTION_NOT_DEFINED');
+        // The error region is '10 * 4'. Total length of string
+        // is 10, so starting length at error is 10, end length is 4
+        // since the end of the string after the error is 4.
+        assert.equal(r1.value.expr.pos.startLen, 10);
+        assert.equal(r1.value.expr.pos.endLen, 4);
+        // Everything is typed, so you can look at the errors defined
+        // in `errors.ts` in order to see exactly what's available in
+        // each case.
+    });
+    it('can be used to manipulate cells in a spreadsheet', function () {
+        // Given some table of information (cols by letter, rows by number):
+        var table = [
+            //    A    B   C    D,
+            [1, 'm', 30, 103],
+            [2, 'f', 26, 260],
+            [3, 'm', 18, 130],
+            [4, 'm', 18, 130],
+            [5, 'm', 18, 130],
+            [6, 'm', 18, 130],
+        ];
+        // ... And functions that can access cells in this table:
+        var getIdx = function (str) {
+            var colIdx = str.charCodeAt(0) - 65; // convert letters to col index
+            var rowIdx = Number(str.slice(1)) - 1; // use rest as row index (1 indexed)
+            return [rowIdx, colIdx];
+        };
+        var getValue = function (val) {
+            if (typeof val === 'string') {
+                var _a = getIdx(val), rowIdx = _a[0], colIdx = _a[1];
+                return table[rowIdx][colIdx];
+            }
+            else {
+                return val;
+            }
+        };
+        var getRange = function (a, b) {
+            var _a = getIdx(a), startRow = _a[0], startCol = _a[1];
+            var _b = getIdx(b), endRow = _b[0], endCol = _b[1];
+            var out = [];
+            for (var i = startRow; i <= endRow; i++) {
+                for (var j = startCol; j <= endCol; j++) {
+                    out.push(table[i][j]);
+                }
+            }
+            return out;
+        };
+        // ... We can define operators/functions to work on those cells:
+        var ctx = {
+            scope: {
+                '+': function (a, b) { return getValue(a) + getValue(b); },
+                '-': function (a, b) { return getValue(a) - getValue(b); },
+                ':': function (a, b) { return getRange(a, b); },
+                'SUM': function (a) { return a.reduce(function (acc, n) { return acc + n; }, 0); },
+                'MEAN': function (a) { return a.reduce(function (acc, n) { return acc + n; }, 0) / a.length; }
+            }
+        };
+        // Finally, we can evaluate excel-like commands to query them:
+        var r1 = calcjs.evaluate('SUM(A1:A3)', ctx).value;
+        assert.equal(r1, 6);
+        var r2 = calcjs.evaluate('D1 + D2', ctx).value;
+        assert.equal(r2, 363);
+        var r3 = calcjs.evaluate('MEAN(A1:A5) + SUM(C1:D2) - 10', ctx).value;
+        assert.equal(r3, 412);
     });
     it('can be used to build up a basic language', function () {
         var ctx = function () { return ({
@@ -69,14 +155,14 @@ describe('index', function () {
                 [';']
             ]
         }); };
-        assert.equal(index_1.evaluate('1 + 2 + 3', ctx()), 6);
-        assert.equal(index_1.evaluate('1 + 2 + 3 / 3', ctx()), 4);
-        assert.equal(index_1.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8);
-        assert.equal(index_1.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()), 8);
-        assert.equal(index_1.evaluate('(1 + 2 +  3/3) :pow 2 / 2', ctx()), 8);
-        assert.equal(index_1.evaluate(' log10(100)  +2 -2', ctx()), 2);
-        assert.equal(index_1.evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()), 20);
+        assert.equal(calcjs.evaluate('1 + 2 + 3', ctx()).value, 6);
+        assert.equal(calcjs.evaluate('1 + 2 + 3 / 3', ctx()).value, 4);
+        assert.equal(calcjs.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8);
+        assert.equal(calcjs.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8);
+        assert.equal(calcjs.evaluate("(1 + 2 +  3/3) 'pow 2 / 2", ctx()).value, 8);
+        assert.equal(calcjs.evaluate(' log10(100)  +2 -2', ctx()).value, 2);
+        assert.equal(calcjs.evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()).value, 20);
         // We'll use this example in the README:
-        assert.equal(index_1.evaluate("\n            foo = 2;\n            bar = 4;\n            wibble = foo * bar + pow(2, 10);\n            foo + bar + wibble\n        ", ctx()), 1038);
+        assert.equal(calcjs.evaluate("\n            foo = 2;\n            bar = 4;\n            wibble = foo * bar + pow(2, 10);\n            foo + bar + wibble\n        ", ctx()).value, 1038);
     });
 });
