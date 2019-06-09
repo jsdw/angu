@@ -37,7 +37,7 @@ to the program and exactly what they do with their arguments, and this library t
 You can install the latest release directly from github using `npm`:
 
 ```
-npm install jsdw/calcjs#v0.1.0
+npm install jsdw/calcjs#v0.2.0
 ```
 
 # Basic Usage
