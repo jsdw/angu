@@ -1,4 +1,4 @@
-# Calc.js
+# Angu.
 
 A simple, versatile evaluator that can be used to implement and safely evaluate DSLs (Domain Specific Languages)
 in the browser. You have complete control over every operation performed, and this library takes care of the
@@ -30,14 +30,14 @@ Or a range of other things.
 In each case, we define the operators (optionally with precedence and associativity) and functions available
 to the program and exactly what they do with their arguments, and this library takes care of the rest.
 
-[Complete examples can be found here](https://github.com/jsdw/calcjs/blob/master/src/index.test.ts).
+[Complete examples can be found here](https://github.com/jsdw/angu/blob/master/src/index.test.ts).
 
 # Installation
 
 You can install the latest release directly from github using `npm`:
 
 ```
-npm install jsdw/calcjs#v0.2.0
+npm install jsdw/angu#v0.2.0
 ```
 
 # Basic Usage
@@ -46,7 +46,7 @@ First, you define a `Context` which determines how expressions will be evaluated
 we might define something like the following:
 
 ```
-import { evaluate } from 'calcjs'
+import { evaluate } from 'angu'
 
 const ctx = {
     // We provide these operators:
