@@ -8,8 +8,9 @@ var result_1 = require("./result");
 var NUMBER_REGEX = /[0-9]/;
 var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
-var OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;-]/;
+var OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/;
 var WHITESPACE_REGEX = /\s/;
+var INFIX_TOK_PREFIX = "'";
 /** Parse any expression, consuming surrounding space.This is the primary entry point: */
 function expression(opts) {
     // Convert opts to an internal format that's easier to work with.
@@ -262,8 +263,8 @@ function op() {
     return libparser_1.default
         // An op is the valid op chars, or..
         .mustTakeWhile(OP_REGEX).map(function (s) { return ({ value: s, isOp: true }); })
-        // A token prefixed with ':'
-        .or(libparser_1.default.matchString(":").andThen(token).map(function (s) { return ({ value: s, isOp: false }); }));
+        // A token prefixed with the infix prefix
+        .or(libparser_1.default.matchString(INFIX_TOK_PREFIX).andThen(token).map(function (s) { return ({ value: s, isOp: false }); }));
 }
 exports.op = op;
 function ignoreWhitespace() {

@@ -40,9 +40,9 @@ describe('parser', function() {
         assertRoughlyEqual(parser.expression(opts).eval('(1.2 )'), ok({ kind: 'number', value: 1.2, string: '1.2' }))
     })
 
-    it('parses functions as operators by prefixing with ":"', () => {
+    it('parses functions as operators by prefixing with \'', () => {
         const opts = { }
-        assertRoughlyEqual(parser.expression(opts).parse('1 :foo 2'), ok({
+        assertRoughlyEqual(parser.expression(opts).parse("1 'foo 2"), ok({
             output: {
                 kind: 'functioncall',
                 name: 'foo',
@@ -149,7 +149,7 @@ describe('parser', function() {
     it('always puts function ops first if no precedence given for them', () => {
         const opts = { precedence: [['*'], ['bar']] }
         // foo is evaluated first:
-        assertRoughlyEqual(parser.expression(opts).eval('5 * 3 :foo 2 * 4'), ok({
+        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 'foo 2 * 4"), ok({
             kind: 'functioncall',
             name: '*',
             infix: true,
@@ -175,7 +175,7 @@ describe('parser', function() {
             ]
         }))
         // bar is evaluated last (it is listed last in precedence):
-        assertRoughlyEqual(parser.expression(opts).eval('5 * 3 :bar 2 * 4'), ok({
+        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 'bar 2 * 4"), ok({
             kind: 'functioncall',
             name: 'bar',
             infix: true,

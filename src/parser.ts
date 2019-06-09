@@ -5,8 +5,9 @@ import { isOk } from './result';
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
-const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;-]/
+const OP_REGEX = /[!£$%^&*@#~?<>|/\\+=;:-]/
 const WHITESPACE_REGEX = /\s/
+const INFIX_TOK_PREFIX = "'"
 
 // Configure precedence of ops:
 
@@ -286,8 +287,8 @@ export function op(): Parser<Op> {
     return Parser
         // An op is the valid op chars, or..
         .mustTakeWhile(OP_REGEX).map(s => ({ value: s, isOp: true }))
-        // A token prefixed with ':'
-        .or(Parser.matchString(":").andThen(token).map(s => ({ value: s, isOp: false })))
+        // A token prefixed with the infix prefix
+        .or(Parser.matchString(INFIX_TOK_PREFIX).andThen(token).map(s => ({ value: s, isOp: false })))
 }
 
 export function ignoreWhitespace(): Parser<void> {
