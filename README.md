@@ -53,10 +53,10 @@ import { evaluate } from 'angu'
 const ctx = {
     // We provide these operators:
     scope: {
-        '-': (a: any, b: any) => a - b,
-        '+': (a: any, b: any) => a + b,
-        '/': (a: any, b: any) => a / b,
-        '*': (a: any, b: any) => a * b,
+        '-': (a, b) => a.eval() - b.eval(),
+        '+': (a, b) => a.eval() + b.eval(),
+        '/': (a, b) => a.eval() / b.eval(),
+        '*': (a, b) => a.eval() * b.eval(),
     },
     // And define the precedence to be as expected:
     precedence: [

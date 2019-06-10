@@ -1,10 +1,10 @@
 import * as interpreter from './interpreter'
 import * as parser from './parser'
 import * as errors from './errors'
-import { isOk, Result, err, mapErr } from './result';
+import { isOk, Result, err, ok, mapErr } from './result';
 
 // Re-export some useful functions:
-export { Context, FunctionContext } from './interpreter'
+export { Context, FunctionContext, Value } from './interpreter'
 export { isOk, isErr } from './result'
 
 /**
@@ -24,8 +24,10 @@ export function evaluate(input: string, context: interpreter.Context): Result<an
         return err(errors.addPositionToError(input, e))
     }
 
-    return mapErr(
-        interpreter.evaluate(parsed.value.output, context),
-        e => errors.addPositionToError(input, e)
-    )
+    try {
+        const value = interpreter.evaluate(parsed.value.output, context)
+        return ok(value.eval())
+    } catch(e) {
+        return err(e)
+    }
 }
