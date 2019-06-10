@@ -5,6 +5,8 @@ import * as angu from './index'
 // you can do using this library. each `it` case is another
 // completely self-contained example.
 
+type Any = angu.Value
+
 describe('index', function(){
 
     it('can be used to create a simple calculator', () => {
@@ -14,10 +16,10 @@ describe('index', function(){
         const ctx: angu.Context = {
             // We provide these things in scope:
             scope: {
-                '-': (a: any, b: any) => a - b,
-                '+': (a: any, b: any) => a + b,
-                '/': (a: any, b: any) => a / b,
-                '*': (a: any, b: any) => a * b,
+                '-': (a: Any, b: Any) => a.eval() - b.eval(),
+                '+': (a: Any, b: Any) => a.eval() + b.eval(),
+                '/': (a: Any, b: Any) => a.eval() / b.eval(),
+                '*': (a: Any, b: Any) => a.eval() * b.eval(),
                 'PI': 3.14
             },
             // And define the precedence to be as expected:
@@ -43,8 +45,8 @@ describe('index', function(){
         const ctx: angu.Context = {
             // We provide these operators:
             scope: {
-                '-': (a: any, b: any) => a - b,
-                '+': (a: any, b: any) => a + b
+                '-': (a: Any, b: Any) => a.eval() - b.eval(),
+                '+': (a: Any, b: Any) => a.eval() + b.eval()
             }
         }
 
@@ -114,11 +116,16 @@ describe('index', function(){
         // ... We can define operators/functions to work on those cells:
         const ctx: angu.Context = {
             scope: {
-                '+': (a: any, b: any) => getValue(a) + getValue(b),
-                '-': (a: any, b: any) => getValue(a) - getValue(b),
-                ':': (a: string, b: string) => getRange(a, b),
-                'SUM': (a: number[]) => a.reduce((acc, n) => acc + n, 0),
-                'MEAN': (a: number[]) => a.reduce((acc, n) => acc + n, 0) / a.length
+                '+': (a: Any, b: Any) => getValue(a.eval()) + getValue(b.eval()),
+                '-': (a: Any, b: Any) => getValue(a.eval()) - getValue(b.eval()),
+                ':': (a: Any, b: Any) => getRange(a.eval(), b.eval()),
+                'SUM': (a: angu.Value<number[]>) => {
+                    return a.eval().reduce((acc, n) => acc + n, 0)
+                },
+                'MEAN': (a: angu.Value<number[]>) => {
+                    let arr = a.eval()
+                    return arr.reduce((acc, n) => acc + n, 0) / arr.length
+                }
             }
         }
 
@@ -137,27 +144,28 @@ describe('index', function(){
         const ctx: () => angu.Context = () => ({
             scope: {
                 // Our basic calculator bits from above:
-                '-': (a: any, b: any) => a - b,
-                '+': (a: any, b: any) => a + b,
-                '/': (a: any, b: any) => a / b,
-                '*': (a: any, b: any) => a * b,
+                '-': (a: Any, b: Any) => a.eval() - b.eval(),
+                '+': (a: Any, b: Any) => a.eval() + b.eval(),
+                '/': (a: Any, b: Any) => a.eval() / b.eval(),
+                '*': (a: Any, b: Any) => a.eval() * b.eval(),
                 // Let's allow multiple expressions, separated by ';':
-                ';': (_: any, b: any) => b,
+                ';': (a: Any, b: Any) => { a.eval(); return b.eval() },
                 // we can access raw, unevaluated args using the 'this'
                 // object. We use this here to allow '=' to assign new
                 // variables that are visible to our evaluator:
-                '=': function(this: any, a: any, b: any) {
-                    const firstArg = this.rawArgs[0]
-                    if (firstArg.kind === 'variable') {
-                        this.context.scope[firstArg.name] = b
+                '=': function(a: Any, b: Any) {
+                    const rawA = a.raw()
+                    const resB = b.eval()
+                    if (rawA.kind === 'variable') {
+                        this.context.scope[rawA.name] = resB
                     } else {
-                        throw Error(`Non-variable name provided to left of assignment: ${a}`)
+                        throw Error(`Assignment expected a variable on the left but got a ${rawA.kind}`)
                     }
-                    return b
+                    return resB
                 },
                 // we can define regular functions as well:
-                'log10': (a: any) => Math.log(a) / Math.log(10),
-                'pow': (a: any, b: any) => Math.pow(a, b)
+                'log10': (a: Any) => Math.log(a.eval()) / Math.log(10),
+                'pow': (a: Any, b: Any) => Math.pow(a.eval(), b.eval())
             },
             // first in this list = first to be evaluated:
             precedence: [

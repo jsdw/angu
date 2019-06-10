@@ -11,6 +11,9 @@ var interpreter = __importStar(require("./interpreter"));
 var parser = __importStar(require("./parser"));
 var errors = __importStar(require("./errors"));
 var result_1 = require("./result");
+// Re-export some useful functions:
+var interpreter_1 = require("./interpreter");
+exports.Value = interpreter_1.Value;
 var result_2 = require("./result");
 exports.isOk = result_2.isOk;
 exports.isErr = result_2.isErr;
@@ -28,6 +31,12 @@ function evaluate(input, context) {
         var e = { kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest };
         return result_1.err(errors.addPositionToError(input, e));
     }
-    return result_1.mapErr(interpreter.evaluate(parsed.value.output, context), function (e) { return errors.addPositionToError(input, e); });
+    try {
+        var value = interpreter.evaluate(parsed.value.output, context);
+        return result_1.ok(value.eval());
+    }
+    catch (e) {
+        return result_1.err(e);
+    }
 }
 exports.evaluate = evaluate;

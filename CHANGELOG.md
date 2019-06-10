@@ -1,3 +1,10 @@
+# v0.4.0
+
+## Breaking Changes
+
+- Functions are now provided `Value`s, which can be evaluated using `.eval()`. This allows for
+  lazy evaluation, and obtaining other information from `Value`s.
+
 # v0.3.0
 
 ## Additions

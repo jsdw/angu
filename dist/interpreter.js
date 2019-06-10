@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var result_1 = require("./result");
 function evaluate(expr, context) {
     switch (expr.kind) {
         case 'variable': return evaluateVariable(expr, context);
@@ -13,57 +12,66 @@ exports.evaluate = evaluate;
 function evaluateVariable(expr, context) {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
-    var res = (context.scope || EMPTY)[expr.name];
-    return typeof res === 'undefined'
-        ? result_1.ok(expr.name)
-        : result_1.ok(res);
+    return new Value(expr, function () {
+        var res = (context.scope || EMPTY)[expr.name];
+        return typeof res === 'undefined'
+            ? expr.name
+            : res;
+    });
 }
 function evaluateNumber(expr, _context) {
-    return result_1.ok(expr.value);
+    return new Value(expr, function () { return expr.value; });
 }
 function evaluateBool(expr, _context) {
-    return result_1.ok(expr.value);
+    return new Value(expr, function () { return expr.value; });
 }
 function evaluateFunctioncall(expr, context) {
-    var fn = (context.scope || EMPTY)[expr.name];
-    if (typeof fn === 'function') {
-        var self_1 = { context: context, rawArgs: expr.args };
-        // Evaluate each arg before passing it in, threading out any errors:
-        var evaluatedArgs = [];
-        for (var _i = 0, _a = expr.args; _i < _a.length; _i++) {
-            var arg = _a[_i];
-            var res = evaluate(arg, context);
-            if (result_1.isOk(res)) {
-                evaluatedArgs.push(res.value);
+    return new Value(expr, function () {
+        var fn = (context.scope || EMPTY)[expr.name];
+        if (typeof fn === 'function') {
+            try {
+                return fn.apply({ context: context }, expr.args.map(function (arg) { return evaluate(arg, context); }));
             }
-            else {
-                // Something went wrong evaluating a sub expr; pass that error on:
-                return res;
+            catch (e) {
+                var err = {
+                    kind: 'EVAL_THROW',
+                    expr: expr,
+                    error: e
+                };
+                throw err;
             }
         }
-        try {
-            return result_1.ok(fn.apply(self_1, evaluatedArgs));
+        else if (!fn) {
+            var err = {
+                kind: 'FUNCTION_NOT_DEFINED',
+                expr: expr
+            };
+            throw err;
         }
-        catch (e) {
-            return result_1.err({
-                kind: 'EVAL_THROW',
+        else {
+            var err = {
+                kind: 'NOT_A_FUNCTION',
                 expr: expr,
-                error: e
-            });
+                value: fn
+            };
+            throw err;
         }
-    }
-    else if (!fn) {
-        return result_1.err({
-            kind: 'FUNCTION_NOT_DEFINED',
-            expr: expr
-        });
-    }
-    else {
-        return result_1.err({
-            kind: 'NOT_A_FUNCTION',
-            expr: expr,
-            value: fn
-        });
-    }
+    });
 }
+var Value = /** @class */ (function () {
+    function Value(expr, evaluate) {
+        this.expr = expr;
+        this.evaluate = evaluate;
+    }
+    /** Evaluate the expression and return the result */
+    Value.prototype.eval = function () {
+        return this.evaluate();
+    };
+    /** Return the raw, unevaluated expression */
+    Value.prototype.raw = function () {
+        return this.expr;
+    };
+    return Value;
+}());
+exports.Value = Value;
 var EMPTY = {};

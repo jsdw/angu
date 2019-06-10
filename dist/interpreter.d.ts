@@ -1,7 +1,5 @@
 import { Expression } from './expression';
-import { EvalError } from './errors';
 import { ExpressionOpts } from './parser';
-import { Result } from './result';
 /**
  * The context in which an expression will be evaluated.
  * This defines the variables, operators and functions that
@@ -19,4 +17,13 @@ export interface FunctionContext extends Context {
      */
     rawArgs: Expression[];
 }
-export declare function evaluate(expr: Expression, context: Context): Result<unknown, EvalError>;
+export declare function evaluate(expr: Expression, context: Context): Value;
+export declare class Value<T = any> {
+    readonly expr: Expression;
+    readonly evaluate: () => T;
+    constructor(expr: Expression, evaluate: () => T);
+    /** Evaluate the expression and return the result */
+    eval(): T;
+    /** Return the raw, unevaluated expression */
+    raw(): Expression;
+}

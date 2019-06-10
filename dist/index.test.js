@@ -9,9 +9,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var angu = __importStar(require("./index"));
-// This file primarily serves to show what sorts of things
-// you can do using this library. each `it` case is another
-// completely self-contained example.
 describe('index', function () {
     it('can be used to create a simple calculator', function () {
         // Define the functionality and such available to
@@ -19,10 +16,10 @@ describe('index', function () {
         var ctx = {
             // We provide these things in scope:
             scope: {
-                '-': function (a, b) { return a - b; },
-                '+': function (a, b) { return a + b; },
-                '/': function (a, b) { return a / b; },
-                '*': function (a, b) { return a * b; },
+                '-': function (a, b) { return a.eval() - b.eval(); },
+                '+': function (a, b) { return a.eval() + b.eval(); },
+                '/': function (a, b) { return a.eval() / b.eval(); },
+                '*': function (a, b) { return a.eval() * b.eval(); },
                 'PI': 3.14
             },
             // And define the precedence to be as expected:
@@ -45,8 +42,8 @@ describe('index', function () {
         var ctx = {
             // We provide these operators:
             scope: {
-                '-': function (a, b) { return a - b; },
-                '+': function (a, b) { return a + b; }
+                '-': function (a, b) { return a.eval() - b.eval(); },
+                '+': function (a, b) { return a.eval() + b.eval(); }
             }
         };
         // This will be an error because * is not defined:
@@ -107,11 +104,16 @@ describe('index', function () {
         // ... We can define operators/functions to work on those cells:
         var ctx = {
             scope: {
-                '+': function (a, b) { return getValue(a) + getValue(b); },
-                '-': function (a, b) { return getValue(a) - getValue(b); },
-                ':': function (a, b) { return getRange(a, b); },
-                'SUM': function (a) { return a.reduce(function (acc, n) { return acc + n; }, 0); },
-                'MEAN': function (a) { return a.reduce(function (acc, n) { return acc + n; }, 0) / a.length; }
+                '+': function (a, b) { return getValue(a.eval()) + getValue(b.eval()); },
+                '-': function (a, b) { return getValue(a.eval()) - getValue(b.eval()); },
+                ':': function (a, b) { return getRange(a.eval(), b.eval()); },
+                'SUM': function (a) {
+                    return a.eval().reduce(function (acc, n) { return acc + n; }, 0);
+                },
+                'MEAN': function (a) {
+                    var arr = a.eval();
+                    return arr.reduce(function (acc, n) { return acc + n; }, 0) / arr.length;
+                }
             }
         };
         // Finally, we can evaluate excel-like commands to query them:
@@ -126,28 +128,29 @@ describe('index', function () {
         var ctx = function () { return ({
             scope: {
                 // Our basic calculator bits from above:
-                '-': function (a, b) { return a - b; },
-                '+': function (a, b) { return a + b; },
-                '/': function (a, b) { return a / b; },
-                '*': function (a, b) { return a * b; },
+                '-': function (a, b) { return a.eval() - b.eval(); },
+                '+': function (a, b) { return a.eval() + b.eval(); },
+                '/': function (a, b) { return a.eval() / b.eval(); },
+                '*': function (a, b) { return a.eval() * b.eval(); },
                 // Let's allow multiple expressions, separated by ';':
-                ';': function (_, b) { return b; },
+                ';': function (a, b) { a.eval(); return b.eval(); },
                 // we can access raw, unevaluated args using the 'this'
                 // object. We use this here to allow '=' to assign new
                 // variables that are visible to our evaluator:
                 '=': function (a, b) {
-                    var firstArg = this.rawArgs[0];
-                    if (firstArg.kind === 'variable') {
-                        this.context.scope[firstArg.name] = b;
+                    var rawA = a.raw();
+                    var resB = b.eval();
+                    if (rawA.kind === 'variable') {
+                        this.context.scope[rawA.name] = resB;
                     }
                     else {
-                        throw Error("Non-variable name provided to left of assignment: " + a);
+                        throw Error("Assignment expected a variable on the left but got a " + rawA.kind);
                     }
-                    return b;
+                    return resB;
                 },
                 // we can define regular functions as well:
-                'log10': function (a) { return Math.log(a) / Math.log(10); },
-                'pow': function (a, b) { return Math.pow(a, b); }
+                'log10': function (a) { return Math.log(a.eval()) / Math.log(10); },
+                'pow': function (a, b) { return Math.pow(a.eval(), b.eval()); }
             },
             // first in this list = first to be evaluated:
             precedence: [

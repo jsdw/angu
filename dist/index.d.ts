@@ -1,7 +1,7 @@
 import * as interpreter from './interpreter';
 import * as errors from './errors';
 import { Result } from './result';
-export { Context, FunctionContext } from './interpreter';
+export { Context, FunctionContext, Value } from './interpreter';
 export { isOk, isErr } from './result';
 /**
  * Given an expression to evaluate in string form, and a context
