@@ -75,6 +75,7 @@ exports.anyExpression = anyExpression;
 // binaryOpExpr is trying to find.
 function binaryOpSubExpression(opts) {
     return parenExpression(opts)
+        .or(stringExpression())
         .or(functioncallExpression(opts))
         .or(numberExpression())
         .or(unaryOpExpression(opts)) // try parsing number first, since numbers can by prefixed by + or -.
@@ -95,9 +96,14 @@ function numberExpression() {
     });
 }
 exports.numberExpression = numberExpression;
+function stringExpression() {
+    return string("'").or(string('"')).mapWithPosition(function (s, pos) {
+        return { kind: 'string', value: s, pos: pos };
+    });
+}
+exports.stringExpression = stringExpression;
 function booleanExpression() {
-    return libparser_1.default.matchString('true')
-        .or(libparser_1.default.matchString('false'))
+    return libparser_1.default.matchString('true', 'false')
         .mapWithPosition(function (boolStr, pos) {
         return {
             kind: 'bool',
@@ -268,6 +274,19 @@ function number() {
     });
 }
 exports.number = number;
+function string(delim) {
+    var escapesAndEnds = libparser_1.default.matchString('\\\\', '\\' + delim, delim);
+    var restOfString = libparser_1.default.takeUntil(escapesAndEnds)
+        .andThen(function (c) {
+        if (c.until === '\\' + delim)
+            return restOfString.map(function (s) { return c.result + delim + s; });
+        else if (c.until === '\\\\')
+            return restOfString.map(function (s) { return c.result + '\\' + s; });
+        return libparser_1.default.ok(c.result);
+    });
+    return libparser_1.default.matchString("" + delim).andThen(function (_) { return restOfString; });
+}
+exports.string = string;
 function token() {
     return libparser_1.default.lazy(function () {
         var s = "";

@@ -81,6 +81,16 @@ that contains the error. Specific errors contain other information depending on 
 
 # Details
 
+## Primitives
+
+Angu supports the following literals:
+
+- booleans ('true' or 'false')
+- numbers
+- strings (strings can be surrounded in ' or ", \'s inside a string escape the delimiter and themselves)
+
+Otherwise, it relies on operators and function calls to transform and manipulate them.
+
 ## Operators
 
 Any of the following characters can be used to define an operator:

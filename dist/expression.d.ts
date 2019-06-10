@@ -1,5 +1,5 @@
 import { Pos } from "./libparser";
-export declare type Expression = ExprVariable | ExprNumber | ExprBool | ExprFunctioncall;
+export declare type Expression = ExprVariable | ExprNumber | ExprBool | ExprFunctioncall | ExprString;
 export declare type ExprVariable = {
     kind: 'variable';
     name: string;
@@ -21,5 +21,10 @@ export declare type ExprFunctioncall = {
     name: string;
     args: Expression[];
     infix: boolean;
+    pos: Pos;
+};
+export declare type ExprString = {
+    kind: 'string';
+    value: string;
     pos: Pos;
 };

@@ -1,4 +1,4 @@
-import { Expression, ExprVariable, ExprNumber, ExprBool, ExprFunctioncall } from './expression'
+import { Expression, ExprVariable, ExprNumber, ExprBool, ExprFunctioncall, ExprString } from './expression'
 import { EvalError } from './errors'
 import { ExpressionOpts } from './parser'
 
@@ -27,6 +27,7 @@ export function evaluate(expr: Expression, context: Context): Value {
         case 'number': return evaluateNumber(expr, context)
         case 'bool': return evaluateBool(expr, context)
         case 'functioncall': return evaluateFunctioncall(expr, context)
+        case 'string': return evaluateString(expr, context)
     }
 }
 
@@ -46,6 +47,10 @@ function evaluateNumber(expr: ExprNumber, _context: Context): Value<number> {
 }
 
 function evaluateBool(expr: ExprBool, _context: Context): Value<boolean> {
+    return new Value(expr, () => expr.value)
+}
+
+function evaluateString(expr: ExprString, _context: Context): Value {
     return new Value(expr, () => expr.value)
 }
 

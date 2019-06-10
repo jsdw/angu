@@ -1,3 +1,9 @@
+# v0.5.0
+
+## Additions
+
+- Angu now supports string literals [#3](https://github.com/jsdw/angu/pull/3)
+
 # v0.4.0
 
 ## Breaking Changes
