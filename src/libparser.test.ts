@@ -1,8 +1,15 @@
 import Parser from './libparser'
-import { isOk, isErr, ok } from './result'
+import { isOk, isErr, ok, err } from './result'
 import * as assert from 'assert'
 
 describe("libparser", function() {
+
+    it('can match any character', () => {
+        assert.deepEqual(Parser.anyChar().parse(''), err({ kind: 'END_OF_STRING', input: '' }))
+        assert.deepEqual(Parser.anyChar().parse('a'), ok({ output: 'a', rest: '' }))
+        assert.deepEqual(Parser.anyChar().parse('*'), ok({ output: '*', rest: '' }))
+        assert.deepEqual(Parser.anyChar().parse('abc'), ok({ output: 'a', rest: 'bc' }))
+    })
 
     it('can match strings', () => {
         expectDoesMatchString('foo', 'bar', 'foobar')
@@ -48,6 +55,12 @@ describe("libparser", function() {
             assert.equal(res.value.output, m)
         }
     }
+
+    it('can takeUntil', () => {
+        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('foo'), err({ kind: 'END_OF_STRING', input: '' }))
+        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('fool'), ok({ output: { result: 'foo', until: 'l' }, rest: '' }))
+        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('list'), ok({ output: { result: '', until: 'l' }, rest: 'ist' }))
+    })
 
     it('will get at least one char back from mustTakeWhile', () => {
         const p = Parser.mustTakeWhile(c => /[0-9]/.test(c))

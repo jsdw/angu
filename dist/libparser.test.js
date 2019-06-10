@@ -14,6 +14,12 @@ var libparser_1 = __importDefault(require("./libparser"));
 var result_1 = require("./result");
 var assert = __importStar(require("assert"));
 describe("libparser", function () {
+    it('can match any character', function () {
+        assert.deepEqual(libparser_1.default.anyChar().parse(''), result_1.err({ kind: 'END_OF_STRING', input: '' }));
+        assert.deepEqual(libparser_1.default.anyChar().parse('a'), result_1.ok({ output: 'a', rest: '' }));
+        assert.deepEqual(libparser_1.default.anyChar().parse('*'), result_1.ok({ output: '*', rest: '' }));
+        assert.deepEqual(libparser_1.default.anyChar().parse('abc'), result_1.ok({ output: 'a', rest: 'bc' }));
+    });
     it('can match strings', function () {
         expectDoesMatchString('foo', 'bar', 'foobar');
         expectDoesMatchString('f', 'oobar', 'foobar');
@@ -54,6 +60,11 @@ describe("libparser", function () {
             assert.equal(res.value.output, m);
         }
     }
+    it('can takeUntil', function () {
+        assert.deepEqual(libparser_1.default.takeUntil(libparser_1.default.matchString('l')).parse('foo'), result_1.err({ kind: 'END_OF_STRING', input: '' }));
+        assert.deepEqual(libparser_1.default.takeUntil(libparser_1.default.matchString('l')).parse('fool'), result_1.ok({ output: { result: 'foo', until: 'l' }, rest: '' }));
+        assert.deepEqual(libparser_1.default.takeUntil(libparser_1.default.matchString('l')).parse('list'), result_1.ok({ output: { result: '', until: 'l' }, rest: 'ist' }));
+    });
     it('will get at least one char back from mustTakeWhile', function () {
         var p = libparser_1.default.mustTakeWhile(function (c) { return /[0-9]/.test(c); });
         assert.deepEqual(p.parse('123foo'), result_1.ok({ output: '123', rest: 'foo' }));

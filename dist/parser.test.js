@@ -24,6 +24,20 @@ describe('parser', function () {
         assert.ok(result_1.isErr(parser.number().eval('9.')));
         assert.ok(result_1.isErr(parser.number().eval('.')));
     });
+    it('parses strings with arbitrary delims properly', function () {
+        assertParsesStrings('"');
+        assertParsesStrings("'");
+    });
+    function assertParsesStrings(delim) {
+        assert.deepEqual(parser.string(delim).eval(delim + "hello" + delim), result_1.ok('hello'));
+        assert.deepEqual(parser.string(delim).eval("" + delim + delim), result_1.ok(''));
+        // '\"" == '"' in the output:
+        assert.deepEqual(parser.string(delim).eval(delim + "hello \\" + delim + " there" + delim), result_1.ok("hello " + delim + " there"));
+        // two '\'s == one escaped '\' in the output:
+        assert.deepEqual(parser.string(delim).eval(delim + "hello \\\\" + delim), result_1.ok('hello \\'));
+        // three '\'s + '"' == one escaped '\' and then an escaped '"':
+        assert.deepEqual(parser.string(delim).eval(delim + "hello \\\\\\" + delim + delim), result_1.ok("hello \\" + delim));
+    }
     it('parses numbers in preference to unary ops', function () {
         // Make sure '-' and '+' are treated as part of the number
         // and not a unary op to apply.
@@ -46,6 +60,10 @@ describe('parser', function () {
     });
     it('parses basic expression types', function () {
         var opts = {};
+        assertRoughlyEqual(parser.expression(opts).eval('""'), result_1.ok({ kind: 'string', value: "" }));
+        assertRoughlyEqual(parser.expression(opts).eval('"hello"'), result_1.ok({ kind: 'string', value: "hello" }));
+        assertRoughlyEqual(parser.expression(opts).eval("'hello'"), result_1.ok({ kind: 'string', value: "hello" }));
+        assertRoughlyEqual(parser.expression(opts).eval('("hello")'), result_1.ok({ kind: 'string', value: "hello" }));
         assertRoughlyEqual(parser.expression(opts).eval('true'), result_1.ok({ kind: 'bool', value: true }));
         assertRoughlyEqual(parser.expression(opts).eval('false'), result_1.ok({ kind: 'bool', value: false }));
         assertRoughlyEqual(parser.expression(opts).eval('foo'), result_1.ok({ kind: 'variable', name: 'foo' }));

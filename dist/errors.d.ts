@@ -31,7 +31,11 @@ export declare type InterpretError = {
     input: string;
 };
 /** Parse error */
-export declare type ParseError = ParseErrorMatchString | ParseErrorMustTakeWhile | ParseErrorMustSepBy;
+export declare type ParseError = ParseErrorMatchString | ParseErrorMustTakeWhile | ParseErrorMustSepBy | ParseErrorEndOfString;
+export declare type ParseErrorEndOfString = {
+    kind: 'END_OF_STRING';
+    input: "";
+};
 export declare type ParseErrorMatchString = {
     kind: 'MATCH_STRING';
     expectedOneOf: string[];

@@ -101,6 +101,7 @@ export function anyExpression(opts: InternalExpressionOpts): Parser<Expression> 
 // binaryOpExpr is trying to find.
 export function binaryOpSubExpression(opts: InternalExpressionOpts): Parser<Expression> {
     return parenExpression(opts)
+        .or(stringExpression())
         .or(functioncallExpression(opts))
         .or(numberExpression())
         .or(unaryOpExpression(opts)) // try parsing number first, since numbers can by prefixed by + or -.
@@ -122,9 +123,14 @@ export function numberExpression(): Parser<Expression> {
     })
 }
 
+export function stringExpression(): Parser<Expression> {
+    return string("'").or(string('"')).mapWithPosition((s, pos) => {
+        return { kind: 'string', value: s, pos }
+    })
+}
+
 export function booleanExpression(): Parser<Expression> {
-    return Parser.matchString('true')
-        .or(Parser.matchString('false'))
+    return Parser.matchString('true', 'false')
         .mapWithPosition((boolStr, pos) => {
             return {
                 kind: 'bool',
@@ -293,6 +299,18 @@ export function number(): Parser<string> {
                 return Parser.ok(nStr)
             })
     })
+}
+
+export function string(delim: string): Parser<string> {
+    const escapesAndEnds: Parser<string>
+        = Parser.matchString('\\\\', '\\' + delim, delim)
+    const restOfString: Parser<string> = Parser.takeUntil(escapesAndEnds)
+        .andThen(c => {
+            if(c.until === '\\' + delim) return restOfString.map(s => c.result + delim + s)
+            else if(c.until === '\\\\') return restOfString.map(s => c.result + '\\' + s)
+            return Parser.ok(c.result)
+        })
+    return Parser.matchString(`${delim}`).andThen(_ => restOfString)
 }
 
 export function token(): Parser<string> {

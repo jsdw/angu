@@ -25,6 +25,17 @@ var Parser = /** @class */ (function () {
             return result.ok({ output: val, rest: input });
         });
     };
+    /** Any one character. Only fails on an empty string */
+    Parser.anyChar = function () {
+        return new Parser(function (input) {
+            if (input.length) {
+                return result.ok({ output: input.slice(0, 1), rest: input.slice(1) });
+            }
+            else {
+                return result.err({ kind: 'END_OF_STRING', input: "" });
+            }
+        });
+    };
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
     Parser.lazy = function (fn) {
         return new Parser(function (input) {
@@ -181,6 +192,34 @@ var Parser = /** @class */ (function () {
             else {
                 return res;
             }
+        });
+    };
+    Parser.takeUntil = function (untilParser) {
+        return new Parser(function (input) {
+            var back = [];
+            while (input.length) {
+                // If we parse the "until", return what we have:
+                var u = untilParser.parse(input);
+                if (result.isOk(u)) {
+                    return result.ok({
+                        output: {
+                            result: back.join(''),
+                            until: u.value.output,
+                        },
+                        rest: u.value.rest
+                    });
+                }
+                // Try parsing the original parser and add to back:
+                var r = Parser.anyChar().parse(input);
+                if (result.isOk(r)) {
+                    back.push(r.value.output);
+                    input = r.value.rest;
+                }
+            }
+            return result.err({
+                kind: 'END_OF_STRING',
+                input: ''
+            });
         });
     };
     return Parser;

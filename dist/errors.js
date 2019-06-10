@@ -20,6 +20,7 @@ function addPositionToError(fullInput, error) {
         case 'MUST_TAKE_WHILE':
         case 'MUST_SEP_BY':
         case 'NOT_CONSUMED_ALL':
+        case 'END_OF_STRING':
             start = fullInput.length - error.input.length;
             end = start;
             return __assign({}, error, { pos: { start: start, end: end } });

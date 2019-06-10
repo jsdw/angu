@@ -19,6 +19,8 @@ export default class Parser<T> {
     parse(input: string): ParseResult<T>;
     /** A parser that does nothing */
     static ok<T>(val: T): Parser<T>;
+    /** Any one character. Only fails on an empty string */
+    static anyChar(): Parser<string>;
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
     static lazy<T>(fn: () => Parser<T>): Parser<T>;
     /** Return a parser that matches a given string */
@@ -46,6 +48,10 @@ export default class Parser<T> {
     mustSepBy<S>(sep: Parser<S>): Parser<{
         results: T[];
         separators: S[];
+    }>;
+    static takeUntil<T>(untilParser: Parser<T>): Parser<{
+        result: string;
+        until: T;
     }>;
 }
 export {};

@@ -19,6 +19,21 @@ describe('parser', function() {
         assert.ok(isErr(parser.number().eval('.')))
     })
 
+    it('parses strings with arbitrary delims properly', () => {
+        assertParsesStrings('"')
+        assertParsesStrings("'")
+    })
+    function assertParsesStrings(delim: string) {
+        assert.deepEqual(parser.string(delim).eval(`${delim}hello${delim}`), ok('hello'))
+        assert.deepEqual(parser.string(delim).eval(`${delim}${delim}`), ok(''))
+        // '\"" == '"' in the output:
+        assert.deepEqual(parser.string(delim).eval(`${delim}hello \\${delim} there${delim}`), ok(`hello ${delim} there`))
+        // two '\'s == one escaped '\' in the output:
+        assert.deepEqual(parser.string(delim).eval(`${delim}hello \\\\${delim}`), ok('hello \\'))
+        // three '\'s + '"' == one escaped '\' and then an escaped '"':
+        assert.deepEqual(parser.string(delim).eval(`${delim}hello \\\\\\${delim}${delim}`), ok(`hello \\${delim}`))
+    }
+
     it('parses numbers in preference to unary ops', () => {
         // Make sure '-' and '+' are treated as part of the number
         // and not a unary op to apply.
@@ -43,6 +58,10 @@ describe('parser', function() {
 
     it('parses basic expression types', () => {
         const opts = { }
+        assertRoughlyEqual(parser.expression(opts).eval('""'), ok({ kind: 'string', value: "" }))
+        assertRoughlyEqual(parser.expression(opts).eval('"hello"'), ok({ kind: 'string', value: "hello" }))
+        assertRoughlyEqual(parser.expression(opts).eval("'hello'"), ok({ kind: 'string', value: "hello" }))
+        assertRoughlyEqual(parser.expression(opts).eval('("hello")'), ok({ kind: 'string', value: "hello" }))
         assertRoughlyEqual(parser.expression(opts).eval('true'), ok({ kind: 'bool', value: true }))
         assertRoughlyEqual(parser.expression(opts).eval('false'), ok({ kind: 'bool', value: false }))
         assertRoughlyEqual(parser.expression(opts).eval('foo'), ok({ kind: 'variable', name: 'foo' }))

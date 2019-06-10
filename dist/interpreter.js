@@ -6,6 +6,7 @@ function evaluate(expr, context) {
         case 'number': return evaluateNumber(expr, context);
         case 'bool': return evaluateBool(expr, context);
         case 'functioncall': return evaluateFunctioncall(expr, context);
+        case 'string': return evaluateString(expr, context);
     }
 }
 exports.evaluate = evaluate;
@@ -23,6 +24,9 @@ function evaluateNumber(expr, _context) {
     return new Value(expr, function () { return expr.value; });
 }
 function evaluateBool(expr, _context) {
+    return new Value(expr, function () { return expr.value; });
+}
+function evaluateString(expr, _context) {
     return new Value(expr, function () { return expr.value; });
 }
 function evaluateFunctioncall(expr, context) {

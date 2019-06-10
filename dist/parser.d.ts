@@ -38,12 +38,14 @@ export declare function anyExpression(opts: InternalExpressionOpts): Parser<Expr
 export declare function binaryOpSubExpression(opts: InternalExpressionOpts): Parser<Expression>;
 export declare function variableExpression(): Parser<Expression>;
 export declare function numberExpression(): Parser<Expression>;
+export declare function stringExpression(): Parser<Expression>;
 export declare function booleanExpression(): Parser<Expression>;
 export declare function unaryOpExpression(opts: InternalExpressionOpts): Parser<Expression>;
 export declare function binaryOpExpression(opts: InternalExpressionOpts): Parser<Expression>;
 export declare function functioncallExpression(opts: InternalExpressionOpts): Parser<Expression>;
 export declare function parenExpression(opts: InternalExpressionOpts): Parser<Expression>;
 export declare function number(): Parser<string>;
+export declare function string(delim: string): Parser<string>;
 export declare function token(): Parser<string>;
 declare type Op = {
     value: string;

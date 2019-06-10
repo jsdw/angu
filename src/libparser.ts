@@ -36,6 +36,17 @@ export default class Parser<T> {
         })
     }
 
+    /** Any one character. Only fails on an empty string */
+    static anyChar(): Parser<string> {
+        return new Parser(input => {
+            if (input.length) {
+                return result.ok({ output: input.slice(0,1), rest: input.slice(1) })
+            } else {
+                return result.err({ kind: 'END_OF_STRING', input: "" })
+            }
+        })
+    }
+
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
     static lazy<T>(fn: () => Parser<T>): Parser<T> {
         return new Parser(input => {
@@ -186,6 +197,35 @@ export default class Parser<T> {
             } else {
                 return res
             }
+        })
+    }
+
+    static takeUntil<T>(untilParser: Parser<T>): Parser<{ result: string, until: T }> {
+        return new Parser(input => {
+            let back: string[] = []
+            while (input.length) {
+                // If we parse the "until", return what we have:
+                const u = untilParser.parse(input)
+                if (result.isOk(u)) {
+                    return result.ok({
+                        output: {
+                            result: back.join(''),
+                            until: u.value.output,
+                        },
+                        rest: u.value.rest
+                    })
+                }
+                // Try parsing the original parser and add to back:
+                const r = Parser.anyChar().parse(input)
+                if (result.isOk(r)) {
+                    back.push(r.value.output)
+                    input = r.value.rest
+                }
+            }
+            return result.err({
+                kind: 'END_OF_STRING',
+                input: ''
+            })
         })
     }
 }

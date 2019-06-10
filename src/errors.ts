@@ -57,7 +57,12 @@ export type ParseError
     = ParseErrorMatchString
     | ParseErrorMustTakeWhile
     | ParseErrorMustSepBy
+    | ParseErrorEndOfString
 
+export type ParseErrorEndOfString = {
+    kind: 'END_OF_STRING',
+    input: ""
+}
 export type ParseErrorMatchString = {
     kind: 'MATCH_STRING'
     expectedOneOf: string[]
@@ -81,6 +86,7 @@ export function addPositionToError(fullInput: string, error: ErrorWithoutPositio
         case 'MUST_TAKE_WHILE':
         case 'MUST_SEP_BY':
         case 'NOT_CONSUMED_ALL':
+        case 'END_OF_STRING':
             start = fullInput.length - error.input.length
             end = start
             return { ...error, pos: { start, end } }

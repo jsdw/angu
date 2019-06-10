@@ -137,6 +137,11 @@ describe('index', function(){
         const r3 = angu.evaluate('MEAN(A1:A5) + SUM(C1:D2) - 10', ctx).value
         assert.equal(r3, 412)
 
+        // Angu supports basic strings (surrounded by ' or "), which we can use
+        // interchangeably with tokens that aren't on scope and so are returned as
+        // strings:
+        const r4 = angu.evaluate('MEAN("A1":\'A5\') + SUM(C1:"D2") - 10', ctx).value
+        assert.equal(r4, 412)
     })
 
     it('can be used to build up a basic language', () => {
@@ -147,7 +152,21 @@ describe('index', function(){
                 '-': (a: Any, b: Any) => a.eval() - b.eval(),
                 '+': (a: Any, b: Any) => a.eval() + b.eval(),
                 '/': (a: Any, b: Any) => a.eval() / b.eval(),
-                '*': (a: Any, b: Any) => a.eval() * b.eval(),
+                '*': (a: Any, b: Any) => {
+                    let aVal = a.eval()
+                    const bVal = b.eval()
+                    // Bit of fun; if we pass string * number, repeat string
+                    // that number of times:
+                    if (typeof aVal === 'string') {
+                        const t = aVal
+                        for(let i = 1; i < bVal; i++) aVal += t
+                        return aVal
+                    }
+                    // Else, just assume both are numbers and multiply them:
+                    else {
+                        return a.eval() * b.eval()
+                    }
+                },
                 // Let's allow multiple expressions, separated by ';':
                 ';': (a: Any, b: Any) => { a.eval(); return b.eval() },
                 // we can access raw, unevaluated args using the 'this'
@@ -177,6 +196,8 @@ describe('index', function(){
             ]
         })
 
+        assert.equal(angu.evaluate('"hello " + "world"', ctx()).value, "hello world")
+        assert.equal(angu.evaluate('"hello" * 4', ctx()).value, "hellohellohellohello")
         assert.equal(angu.evaluate('1 + 2 + 3', ctx()).value, 6)
         assert.equal(angu.evaluate('1 + 2 + 3 / 3', ctx()).value, 4)
         assert.equal(angu.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8)
