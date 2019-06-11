@@ -1,12 +1,12 @@
 export declare type Result<T, E> = OkResult<T> | ErrResult<E>;
-interface OkResult<T> {
+declare type OkResult<T> = {
     kind: 'ok';
     value: T;
-}
-interface ErrResult<E> {
+};
+declare type ErrResult<E> = {
     kind: 'err';
     value: E;
-}
+};
 export declare function ok<T, E>(value: T): Result<T, E>;
 export declare function err<T, E>(value: E): Result<T, E>;
 export declare function isOk<T, E>(result: Result<T, E>): result is OkResult<T>;

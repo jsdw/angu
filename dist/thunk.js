@@ -1,16 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function evaluate(expr, context) {
+function create(expr, context) {
     switch (expr.kind) {
-        case 'variable': return evaluateVariable(expr, context);
-        case 'number': return evaluateNumber(expr, context);
-        case 'bool': return evaluateBool(expr, context);
-        case 'functioncall': return evaluateFunctioncall(expr, context);
-        case 'string': return evaluateString(expr, context);
+        case 'variable': return thunkVariable(expr, context);
+        case 'number': return thunkNumber(expr, context);
+        case 'bool': return thunkBool(expr, context);
+        case 'functioncall': return thunkFunctioncall(expr, context);
+        case 'string': return thunkString(expr, context);
     }
 }
-exports.evaluate = evaluate;
-function evaluateVariable(expr, context) {
+exports.create = create;
+function thunkVariable(expr, context) {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
     return new Value(expr, function () {
@@ -20,21 +20,21 @@ function evaluateVariable(expr, context) {
             : res;
     });
 }
-function evaluateNumber(expr, _context) {
+function thunkNumber(expr, _context) {
     return new Value(expr, function () { return expr.value; });
 }
-function evaluateBool(expr, _context) {
+function thunkBool(expr, _context) {
     return new Value(expr, function () { return expr.value; });
 }
-function evaluateString(expr, _context) {
+function thunkString(expr, _context) {
     return new Value(expr, function () { return expr.value; });
 }
-function evaluateFunctioncall(expr, context) {
+function thunkFunctioncall(expr, context) {
     return new Value(expr, function () {
         var fn = (context.scope || EMPTY)[expr.name];
         if (typeof fn === 'function') {
             try {
-                return fn.apply({ context: context }, expr.args.map(function (arg) { return evaluate(arg, context); }));
+                return fn.apply({ context: context }, expr.args.map(function (arg) { return create(arg, context); }));
             }
             catch (e) {
                 var err = {
@@ -63,13 +63,13 @@ function evaluateFunctioncall(expr, context) {
     });
 }
 var Value = /** @class */ (function () {
-    function Value(expr, evaluate) {
+    function Value(expr, evaluateThunk) {
         this.expr = expr;
-        this.evaluate = evaluate;
+        this.evaluateThunk = evaluateThunk;
     }
-    /** Evaluate the expression and return the result */
-    Value.prototype.val = function () {
-        return this.evaluate();
+    /** Evaluate the thunk and return the resulting value */
+    Value.prototype.eval = function () {
+        return this.evaluateThunk();
     };
     /** Return the raw, unevaluated expression */
     Value.prototype.raw = function () {

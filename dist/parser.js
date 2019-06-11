@@ -8,68 +8,16 @@ var result_1 = require("./result");
 var NUMBER_REGEX = /[0-9]/;
 var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
-var OP_REGEX = /[!£$%^&*@#~?<>|/+=;:-]/;
 var WHITESPACE_REGEX = /\s/;
 var INFIX_TOK_SURROUND = "`";
-/** Parse any expression, consuming surrounding space.This is the primary entry point: */
+/** Parse any expression, consuming surrounding space. This is the primary entry point: */
 function expression(opts) {
-    // Convert opts to an internal format that's easier to work with.
-    var precedenceArray = opts.precedence || [];
-    var precedenceMap = {};
-    var associativityMap = {};
-    var precedenceValue = precedenceArray.length;
-    for (var _i = 0, precedenceArray_1 = precedenceArray; _i < precedenceArray_1.length; _i++) {
-        var rawEntry = precedenceArray_1[_i];
-        // entry could be ['+','-',..] or { ops: ['+', '-',..], associativity: 'left }
-        // for convenience. Convert to the more general form to iterate over:
-        var entry = Array.isArray(rawEntry) ? { ops: rawEntry } : rawEntry;
-        var ops = entry.ops;
-        var associativity = entry.associativity || 'left';
-        // Note precedence and associativity of each op:
-        for (var _a = 0, ops_1 = ops; _a < ops_1.length; _a++) {
-            var op_1 = ops_1[_a];
-            precedenceMap[op_1] = precedenceValue;
-            associativityMap[op_1] = associativity;
-        }
-        precedenceValue--;
-    }
-    // Look through scope to find all valid ops that have been declared.
-    // We can then parse  exactly those, rejecting characters that aren't declared.
-    // sort them longest first so we match most specific first.
-    var scope = opts.scope || {};
-    var validOps = [];
-    for (var key in scope) {
-        // The op in scope must be a function:
-        if (typeof scope[key] !== 'function') {
-            continue;
-        }
-        // Each character must be a valid op charatcer:
-        for (var i = 0; i < key.length; i++) {
-            var char = key.charAt(i);
-            if (!OP_REGEX.test(char))
-                continue;
-        }
-        validOps.push(key);
-    }
-    validOps.sort(function (a, b) {
-        return a.length > b.length ? -1
-            : a.length < b.length ? 1
-                : 0;
-    });
-    return anyExpression({
-        precedence: precedenceMap,
-        associativity: associativityMap,
-        ops: validOps
-    });
-}
-exports.expression = expression;
-function anyExpression(opts) {
     var exprParser = binaryOpExpression(opts).or(binaryOpSubExpression(opts));
     return ignoreWhitespace()
         .andThen(function (_) { return exprParser; })
         .andThen(function (e) { return ignoreWhitespace().map(function (_) { return e; }); });
 }
-exports.anyExpression = anyExpression;
+exports.expression = expression;
 // When parsing binaryOpExpressions, we accept any sort of expression except
 // another binaryOpExpression, since that would consume the stuff the first
 // binaryOpExpr is trying to find.
@@ -115,7 +63,7 @@ function booleanExpression() {
 exports.booleanExpression = booleanExpression;
 function unaryOpExpression(opts) {
     return op(opts.ops).andThen(function (op) {
-        return anyExpression(opts).mapWithPosition(function (expr, pos) {
+        return expression(opts).mapWithPosition(function (expr, pos) {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos: pos };
         });
     });
@@ -180,12 +128,12 @@ function binaryOpExpression(opts) {
         while (separators.length) {
             var _b = highestPrecIdx(separators), firstIdx = _b[0], lastIdx = _b[1];
             var idx = getIdxFromAssociativity(firstIdx, lastIdx, separators);
-            var op_2 = separators.splice(idx, 1)[0];
+            var op_1 = separators.splice(idx, 1)[0];
             var left = results[idx];
             var right = results[idx + 1];
             var expr = {
                 kind: 'functioncall',
-                name: op_2.value,
+                name: op_1.value,
                 args: [left, right],
                 infix: true,
                 pos: { startLen: left.pos.startLen, endLen: right.pos.endLen }
@@ -208,7 +156,7 @@ function functioncallExpression(opts) {
             return libparser_1.default.matchString('(');
         })
             .andThen(function (_) {
-            return anyExpression(opts)
+            return expression(opts)
                 .sepBy(sep)
                 .map(function (_a) {
                 var results = _a.results;
@@ -231,7 +179,7 @@ function parenExpression(opts) {
         var expr;
         return libparser_1.default.matchString('(')
             .andThen(function (_) { return ignoreWhitespace(); })
-            .andThen(function (_) { return anyExpression(opts); })
+            .andThen(function (_) { return expression(opts); })
             .andThen(function (e) {
             expr = e;
             return ignoreWhitespace();

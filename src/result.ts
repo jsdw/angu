@@ -2,8 +2,8 @@ export type Result<T, E>
     = OkResult<T>
     | ErrResult<E>
 
-interface OkResult<T> { kind: 'ok', value: T }
-interface ErrResult<E> { kind: 'err', value: E }
+type OkResult<T> = { kind: 'ok', value: T }
+type ErrResult<E> = { kind: 'err', value: E }
 
 export function ok<T, E>(value: T): Result<T, E> {
     return { kind: 'ok', value }

@@ -23,7 +23,7 @@ export declare class Value<T = any> {
     readonly evaluate: () => T;
     constructor(expr: Expression, evaluate: () => T);
     /** Evaluate the expression and return the result */
-    eval(): T;
+    val(): T;
     /** Return the raw, unevaluated expression */
     raw(): Expression;
 }

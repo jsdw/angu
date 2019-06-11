@@ -1,19 +1,23 @@
-import * as interpreter from './interpreter'
+import * as thunk from './thunk'
 import * as parser from './parser'
 import * as errors from './errors'
 import { isOk, Result, err, ok, mapErr } from './result';
+import { ExternalContext, toInternalContext } from './context'
 
 // Re-export some useful functions:
-export { Context, FunctionContext, Value } from './interpreter'
+export { FunctionContext, Value } from './thunk'
 export { isOk, isErr } from './result'
+
+export type Context = ExternalContext
 
 /**
  * Given an expression to evaluate in string form, and a context
  * to evaluate the expression against, return the result of
  * this evaluation or throw an error if something goes wrong.
  */
-export function evaluate(input: string, context: interpreter.Context): Result<any, errors.Error> {
-    const parsed = parser.expression(context).parse(input)
+export function evaluate(input: string, context: Context): Result<any, errors.Error> {
+    const internalCtx = toInternalContext(context)
+    const parsed = parser.expression(internalCtx).parse(input)
 
     if (!isOk(parsed)) {
         return mapErr(parsed, e => errors.addPositionToError(input, e))
@@ -25,9 +29,10 @@ export function evaluate(input: string, context: interpreter.Context): Result<an
     }
 
     try {
-        const value = interpreter.evaluate(parsed.value.output, context)
+        const value = thunk.create(parsed.value.output, internalCtx)
         return ok(value.eval())
     } catch(e) {
         return err(e)
     }
 }
+

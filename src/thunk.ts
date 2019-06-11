@@ -1,19 +1,12 @@
 import { Expression, ExprVariable, ExprNumber, ExprBool, ExprFunctioncall, ExprString } from './expression'
+import { InternalContext } from './context'
 import { EvalError } from './errors'
-import { ExpressionOpts } from './parser'
-
-/**
- * The context in which an expression will be evaluated.
- * This defines the variables, operators and functions that
- * are available to use.
- */
-export type Context = ExpressionOpts
 
 /**
  * This context is provided to any functions on scope that are called
  * by the interpreter.
  */
-export interface FunctionContext extends Context {
+export interface FunctionContext extends InternalContext {
     /**
      * Raw, unevaluated Expressions (the evaluated forms of which have)
      * been provided as the function args
@@ -21,17 +14,17 @@ export interface FunctionContext extends Context {
     rawArgs: Expression[]
 }
 
-export function evaluate(expr: Expression, context: Context): Value {
+export function create(expr: Expression, context: InternalContext): Value {
     switch(expr.kind) {
-        case 'variable': return evaluateVariable(expr, context)
-        case 'number': return evaluateNumber(expr, context)
-        case 'bool': return evaluateBool(expr, context)
-        case 'functioncall': return evaluateFunctioncall(expr, context)
-        case 'string': return evaluateString(expr, context)
+        case 'variable': return thunkVariable(expr, context)
+        case 'number': return thunkNumber(expr, context)
+        case 'bool': return thunkBool(expr, context)
+        case 'functioncall': return thunkFunctioncall(expr, context)
+        case 'string': return thunkString(expr, context)
     }
 }
 
-function evaluateVariable(expr: ExprVariable, context: Context): Value {
+function thunkVariable(expr: ExprVariable, context: InternalContext): Value {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
     return new Value(expr, () => {
@@ -42,24 +35,24 @@ function evaluateVariable(expr: ExprVariable, context: Context): Value {
     })
 }
 
-function evaluateNumber(expr: ExprNumber, _context: Context): Value<number> {
+function thunkNumber(expr: ExprNumber, _context: InternalContext): Value<number> {
     return new Value(expr, () => expr.value)
 }
 
-function evaluateBool(expr: ExprBool, _context: Context): Value<boolean> {
+function thunkBool(expr: ExprBool, _context: InternalContext): Value<boolean> {
     return new Value(expr, () => expr.value)
 }
 
-function evaluateString(expr: ExprString, _context: Context): Value {
+function thunkString(expr: ExprString, _context: InternalContext): Value {
     return new Value(expr, () => expr.value)
 }
 
-function evaluateFunctioncall(expr: ExprFunctioncall, context: Context): Value {
+function thunkFunctioncall(expr: ExprFunctioncall, context: InternalContext): Value {
     return new Value(expr, () => {
         const fn = (context.scope || EMPTY)[expr.name]
         if (typeof fn === 'function') {
             try {
-                return fn.apply({ context }, expr.args.map(arg => evaluate(arg, context)))
+                return fn.apply({ context }, expr.args.map(arg => create(arg, context)))
             } catch (e) {
                 const err: EvalError = {
                     kind: 'EVAL_THROW',
@@ -86,11 +79,11 @@ function evaluateFunctioncall(expr: ExprFunctioncall, context: Context): Value {
 }
 
 export class Value<T = any> {
-    constructor(readonly expr: Expression, readonly evaluate: () => T) {}
+    constructor(readonly expr: Expression, readonly evaluateThunk: () => T) {}
 
-    /** Evaluate the expression and return the result */
+    /** Evaluate the thunk and return the resulting value */
     eval() {
-        return this.evaluate()
+        return this.evaluateThunk()
     }
 
     /** Return the raw, unevaluated expression */

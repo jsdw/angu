@@ -7,13 +7,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var interpreter = __importStar(require("./interpreter"));
+var thunk = __importStar(require("./thunk"));
 var parser = __importStar(require("./parser"));
 var errors = __importStar(require("./errors"));
 var result_1 = require("./result");
+var context_1 = require("./context");
 // Re-export some useful functions:
-var interpreter_1 = require("./interpreter");
-exports.Value = interpreter_1.Value;
+var thunk_1 = require("./thunk");
+exports.Value = thunk_1.Value;
 var result_2 = require("./result");
 exports.isOk = result_2.isOk;
 exports.isErr = result_2.isErr;
@@ -23,7 +24,8 @@ exports.isErr = result_2.isErr;
  * this evaluation or throw an error if something goes wrong.
  */
 function evaluate(input, context) {
-    var parsed = parser.expression(context).parse(input);
+    var internalCtx = context_1.toInternalContext(context);
+    var parsed = parser.expression(internalCtx).parse(input);
     if (!result_1.isOk(parsed)) {
         return result_1.mapErr(parsed, function (e) { return errors.addPositionToError(input, e); });
     }
@@ -32,7 +34,7 @@ function evaluate(input, context) {
         return result_1.err(errors.addPositionToError(input, e));
     }
     try {
-        var value = interpreter.evaluate(parsed.value.output, context);
+        var value = thunk.create(parsed.value.output, internalCtx);
         return result_1.ok(value.eval());
     }
     catch (e) {

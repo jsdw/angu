@@ -1,5 +1,6 @@
 import * as assert from 'assert'
 import * as parser from './parser'
+import { toInternalContext } from './context'
 import { ok, isOk, isErr } from './result'
 
 const ID = (a: any) => a
@@ -35,12 +36,13 @@ describe('parser', function() {
     }
 
     it('parses numbers in preference to unary ops', () => {
+        const opts = toInternalContext({ })
         // Make sure '-' and '+' are treated as part of the number
         // and not a unary op to apply.
-        assertRoughlyEqual(parser.expression({}).eval('-1'), ok({
+        assertRoughlyEqual(parser.expression(opts).eval('-1'), ok({
             kind: 'number', value: -1, string: '-1'
         }))
-        assertRoughlyEqual(parser.expression({}).eval('+1'), ok({
+        assertRoughlyEqual(parser.expression(opts).eval('+1'), ok({
             kind: 'number', value: 1, string: '+1'
         }))
     })
@@ -57,7 +59,7 @@ describe('parser', function() {
     })
 
     it('parses basic expression types', () => {
-        const opts = { }
+        const opts = toInternalContext({ })
         assertRoughlyEqual(parser.expression(opts).eval('""'), ok({ kind: 'string', value: "" }))
         assertRoughlyEqual(parser.expression(opts).eval('"hello"'), ok({ kind: 'string', value: "hello" }))
         assertRoughlyEqual(parser.expression(opts).eval("'hello'"), ok({ kind: 'string', value: "hello" }))
@@ -73,7 +75,7 @@ describe('parser', function() {
     })
 
     it('parses functions as operators by surrounding with `', () => {
-        const opts = { }
+        const opts = toInternalContext({ })
         assertRoughlyEqual(parser.expression(opts).parse("1 `foo` 2"), ok({
             output: {
                 kind: 'functioncall',
@@ -89,10 +91,10 @@ describe('parser', function() {
     })
 
     it('parses unary ops', () => {
-        const opts = {
+        const opts = toInternalContext({
             // The ops we want to use have to exist on scope:
             scope: { '!': ID, '+': ID }
-        }
+        })
         assertRoughlyEqual(parser.expression(opts).eval('!foo'), ok({
             kind: 'functioncall',
             name: '!',
@@ -128,7 +130,7 @@ describe('parser', function() {
     })
 
     it('parses function calls', () => {
-        const opts = { }
+        const opts = toInternalContext({ })
         assertRoughlyEqual(parser.expression(opts).eval('foo()'), ok({
             kind: 'functioncall',
             name: 'foo',
@@ -164,10 +166,10 @@ describe('parser', function() {
     })
 
     it('parses binary ops taking precedence into account', () => {
-        const opts = {
+        const opts = toInternalContext({
             scope: { '^': ID, '+': ID, '*': ID },
             precedence: [['^'], ['*'], ['+']]
-        }
+        })
         assertRoughlyEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), ok({
             kind: 'functioncall',
             name: '+',
@@ -221,10 +223,10 @@ describe('parser', function() {
     })
 
     it('always puts function ops first if no precedence given for them', () => {
-        const opts = {
+        const opts = toInternalContext({
             scope: { '*': ID },
             precedence: [['*'], ['bar']]
-        }
+        })
         // foo is evaluated first:
         assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `foo` 2 * 4"), ok({
             kind: 'functioncall',

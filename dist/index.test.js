@@ -154,9 +154,8 @@ describe('index', function () {
                 },
                 // Let's allow multiple expressions, separated by ';':
                 ';': function (a, b) { a.eval(); return b.eval(); },
-                // we can access raw, unevaluated args using the 'this'
-                // object. We use this here to allow '=' to assign new
-                // variables that are visible to our evaluator:
+                // we can access raw, unevaluated args using the `.raw()`
+                // method provided on values.
                 '=': function (a, b) {
                     var rawA = a.raw();
                     var resB = b.eval();

@@ -9,6 +9,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var parser = __importStar(require("./parser"));
+var context_1 = require("./context");
 var result_1 = require("./result");
 var ID = function (a) { return a; };
 describe('parser', function () {
@@ -39,12 +40,13 @@ describe('parser', function () {
         assert.deepEqual(parser.string(delim).eval(delim + "hello \\\\\\" + delim + delim), result_1.ok("hello \\" + delim));
     }
     it('parses numbers in preference to unary ops', function () {
+        var opts = context_1.toInternalContext({});
         // Make sure '-' and '+' are treated as part of the number
         // and not a unary op to apply.
-        assertRoughlyEqual(parser.expression({}).eval('-1'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('-1'), result_1.ok({
             kind: 'number', value: -1, string: '-1'
         }));
-        assertRoughlyEqual(parser.expression({}).eval('+1'), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval('+1'), result_1.ok({
             kind: 'number', value: 1, string: '+1'
         }));
     });
@@ -59,7 +61,7 @@ describe('parser', function () {
         assert.deepEqual(parser.token().parse('foo-bar'), result_1.ok({ output: 'foo', rest: '-bar' }));
     });
     it('parses basic expression types', function () {
-        var opts = {};
+        var opts = context_1.toInternalContext({});
         assertRoughlyEqual(parser.expression(opts).eval('""'), result_1.ok({ kind: 'string', value: "" }));
         assertRoughlyEqual(parser.expression(opts).eval('"hello"'), result_1.ok({ kind: 'string', value: "hello" }));
         assertRoughlyEqual(parser.expression(opts).eval("'hello'"), result_1.ok({ kind: 'string', value: "hello" }));
@@ -74,7 +76,7 @@ describe('parser', function () {
         assertRoughlyEqual(parser.expression(opts).eval('(1.2 )'), result_1.ok({ kind: 'number', value: 1.2, string: '1.2' }));
     });
     it('parses functions as operators by surrounding with `', function () {
-        var opts = {};
+        var opts = context_1.toInternalContext({});
         assertRoughlyEqual(parser.expression(opts).parse("1 `foo` 2"), result_1.ok({
             output: {
                 kind: 'functioncall',
@@ -89,10 +91,10 @@ describe('parser', function () {
         }));
     });
     it('parses unary ops', function () {
-        var opts = {
+        var opts = context_1.toInternalContext({
             // The ops we want to use have to exist on scope:
             scope: { '!': ID, '+': ID }
-        };
+        });
         assertRoughlyEqual(parser.expression(opts).eval('!foo'), result_1.ok({
             kind: 'functioncall',
             name: '!',
@@ -127,7 +129,7 @@ describe('parser', function () {
         }));
     });
     it('parses function calls', function () {
-        var opts = {};
+        var opts = context_1.toInternalContext({});
         assertRoughlyEqual(parser.expression(opts).eval('foo()'), result_1.ok({
             kind: 'functioncall',
             name: 'foo',
@@ -162,10 +164,10 @@ describe('parser', function () {
         }));
     });
     it('parses binary ops taking precedence into account', function () {
-        var opts = {
+        var opts = context_1.toInternalContext({
             scope: { '^': ID, '+': ID, '*': ID },
             precedence: [['^'], ['*'], ['+']]
-        };
+        });
         assertRoughlyEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), result_1.ok({
             kind: 'functioncall',
             name: '+',
@@ -218,10 +220,10 @@ describe('parser', function () {
         }));
     });
     it('always puts function ops first if no precedence given for them', function () {
-        var opts = {
+        var opts = context_1.toInternalContext({
             scope: { '*': ID },
             precedence: [['*'], ['bar']]
-        };
+        });
         // foo is evaluated first:
         assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `foo` 2 * 4"), result_1.ok({
             kind: 'functioncall',
