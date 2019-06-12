@@ -2,18 +2,6 @@ import { Expression, ExprVariable, ExprNumber, ExprBool, ExprFunctioncall, ExprS
 import { InternalContext } from './context'
 import { EvalError } from './errors'
 
-/**
- * This context is provided to any functions on scope that are called
- * by the interpreter.
- */
-export interface FunctionContext extends InternalContext {
-    /**
-     * Raw, unevaluated Expressions (the evaluated forms of which have)
-     * been provided as the function args
-     */
-    rawArgs: Expression[]
-}
-
 export function create(expr: Expression, context: InternalContext): Value {
     switch(expr.kind) {
         case 'variable': return thunkVariable(expr, context)

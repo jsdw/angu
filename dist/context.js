@@ -1,7 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var OP_REGEX = /[!£$%^&*@#~?<>|/+=;:-]/;
+var OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:-]+$/;
 function toInternalContext(ctx) {
+    // Avoid preparing if we don't need to:
+    if (isInternalContext(ctx))
+        return ctx;
     // Convert opts to an internal format that's easier to work with.
     var precedenceArray = ctx.precedence || [];
     var precedenceMap = {};
@@ -32,11 +35,9 @@ function toInternalContext(ctx) {
         if (typeof scope[key] !== 'function') {
             continue;
         }
-        // Each character must be a valid op charatcer:
-        for (var i = 0; i < key.length; i++) {
-            var char = key.charAt(i);
-            if (!OP_REGEX.test(char))
-                continue;
+        // Each character must be a valid op character:
+        if (!OP_REGEX.test(key)) {
+            continue;
         }
         validOps.push(key);
     }
@@ -54,3 +55,6 @@ function toInternalContext(ctx) {
     };
 }
 exports.toInternalContext = toInternalContext;
+function isInternalContext(ctx) {
+    return ctx._internal_ === true;
+}

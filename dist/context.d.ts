@@ -1,7 +1,8 @@
+/** A context that contains everything required to evaluate an Angu expression */
 export interface ExternalContext {
     /**
      * Order ops from high to low precedence, and optionally
-     * pick an associativity for them(default left). Ops declared
+     * pick an associativity for them (default left). Ops declared
      * first are evaluated first.
      *
      * ops not defined here will have a lower precedence than anything
@@ -36,4 +37,4 @@ export declare type PrecedenceMap = {
 export declare type AssociativityMap = {
     [op: string]: 'left' | 'right';
 };
-export declare function toInternalContext(ctx: ExternalContext): InternalContext;
+export declare function toInternalContext(ctx: ExternalContext | InternalContext): InternalContext;

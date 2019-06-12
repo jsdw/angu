@@ -5,7 +5,7 @@ import * as angu from './index'
 // you can do using this library. each `it` case is another
 // completely self-contained example.
 
-type Any = angu.Value
+type Any = angu.Value;
 
 describe('index', function(){
 
@@ -53,9 +53,9 @@ describe('index', function(){
         // This will be an error because * is not defined:
         const r1 = angu.evaluate('10 * 4 + 2', ctx)
 
-        // We can use a convenience function to check error/ok:
-        assert.ok(angu.isErr(r1))
-        assert.ok(!angu.isOk(r1))
+        // We can use convenience functions to check error/ok:
+        assert.ok(r1.isErr())
+        assert.ok(!r1.isOk())
 
         // Because the operator doesn't exist, we get a parse error as
         // the string could not be entirely consumed, along with the part
@@ -146,6 +146,8 @@ describe('index', function(){
 
     it('can be used to build up a basic language', () => {
 
+        // Put the context behind a function to guarantee that no
+        // state is shared between subsequent evaluate calls.
         const ctx: () => angu.Context = () => ({
             scope: {
                 // Our basic calculator bits from above:
@@ -212,6 +214,41 @@ describe('index', function(){
             wibble = foo * bar + pow(2, 10);
             foo + bar + wibble
         `, ctx()).value, 1038)
+
+    })
+
+    it('can prepare a context and reuse it across evaluations to share state', () => {
+        const ctx: angu.Context = {
+            scope: {
+                // + op from earlier example:
+                '+': (a: Any, b: Any) => a.eval() + b.eval(),
+                // Assignment op from earlier example:
+                '=': function(a: Any, b: Any) {
+                    const rawA = a.raw()
+                    const resB = b.eval()
+                    if (rawA.kind === 'variable') {
+                        this.context.scope[rawA.name] = resB
+                    } else {
+                        throw Error(`Assignment expected a variable on the left but got a ${rawA.kind}`)
+                    }
+                    return resB
+                }
+            },
+            // We want to evaluate '+' calls before '=' calls:
+            precedence: [
+                ['+'],
+                ['=']
+            ]
+        }
+
+        // prepare a context to guarantee that we *do* share
+        // state across subsequent eval calls:
+        const preparedCtx = angu.prepareContext(ctx)
+
+        // Subsequent calls are guaranteed to share state, so this works:
+        assert.equal(angu.evaluate('foo = 10', preparedCtx).value, 10)
+        assert.equal(angu.evaluate('foo = foo + 2', preparedCtx).value, 12)
+        assert.equal(angu.evaluate('foo = foo + 5', preparedCtx).value, 17)
 
     })
 

@@ -34,3 +34,18 @@ function mapErr(result, fn) {
     }
 }
 exports.mapErr = mapErr;
+// The above functions are the most efficient way to work with results, but when we expose our
+// result externally we want to make it more convenient to use and not have to expose the above.
+// Thus, we use this to attach useful prototype methods to the Result, which is less efficient
+// than direct method calls but nicer to work with.
+function toOutputResult(result) {
+    var res = Object.create(resultMethods());
+    res.kind = result.kind;
+    res.value = result.value;
+    return res;
+}
+exports.toOutputResult = toOutputResult;
+var resultMethods = function () { return ({
+    isOk: function () { return this.kind === 'ok'; },
+    isErr: function () { return this.kind === 'err'; }
+}); };

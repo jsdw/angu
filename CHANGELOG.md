@@ -1,3 +1,16 @@
+# v0.6.0
+
+## Additions
+
+- Result returned from `evaluate` call now has convenience methods attached, rather
+  than needing to use standalone methods provided to do the same
+- `prepareContext` function added to allow state sharing across evaluate calls
+
+## Breaking Changed
+
+- `isOk` and `isErr` are no longer exported, but instead are available on the result
+  of the `evaluate` call.
+
 # v0.5.0
 
 ## Additions

@@ -1,8 +1,8 @@
-
+/** A context that contains everything required to evaluate an Angu expression */
 export interface ExternalContext {
     /**
      * Order ops from high to low precedence, and optionally
-     * pick an associativity for them(default left). Ops declared
+     * pick an associativity for them (default left). Ops declared
      * first are evaluated first.
      *
      * ops not defined here will have a lower precedence than anything
@@ -29,9 +29,13 @@ export interface InternalContext {
 export type PrecedenceMap = { [op: string]: number }
 export type AssociativityMap = { [op: string]: 'left' | 'right' }
 
-const OP_REGEX = /[!£$%^&*@#~?<>|/+=;:-]/
+const OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:-]+$/
 
-export function toInternalContext(ctx: ExternalContext): InternalContext {
+export function toInternalContext(ctx: ExternalContext | InternalContext): InternalContext {
+
+    // Avoid preparing if we don't need to:
+    if(isInternalContext(ctx)) return ctx
+
     // Convert opts to an internal format that's easier to work with.
     const precedenceArray = ctx.precedence || []
     const precedenceMap: PrecedenceMap = {}
@@ -61,10 +65,9 @@ export function toInternalContext(ctx: ExternalContext): InternalContext {
         if (typeof scope[key] !== 'function') {
             continue
         }
-        // Each character must be a valid op charatcer:
-        for(let i = 0; i < key.length; i++) {
-            const char = key.charAt(i)
-            if (!OP_REGEX.test(char)) continue
+        // Each character must be a valid op character:
+        if(!OP_REGEX.test(key)) {
+            continue
         }
         validOps.push(key)
     }
@@ -81,4 +84,8 @@ export function toInternalContext(ctx: ExternalContext): InternalContext {
         ops: validOps,
         scope: scope
     }
+}
+
+function isInternalContext(ctx: any): ctx is InternalContext {
+    return ctx._internal_ === true
 }

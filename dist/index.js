@@ -12,12 +12,9 @@ var parser = __importStar(require("./parser"));
 var errors = __importStar(require("./errors"));
 var result_1 = require("./result");
 var context_1 = require("./context");
-// Re-export some useful functions:
+// Re-export the Value type, since it's handed to functions in scope:
 var thunk_1 = require("./thunk");
 exports.Value = thunk_1.Value;
-var result_2 = require("./result");
-exports.isOk = result_2.isOk;
-exports.isErr = result_2.isErr;
 /**
  * Given an expression to evaluate in string form, and a context
  * to evaluate the expression against, return the result of
@@ -25,6 +22,10 @@ exports.isErr = result_2.isErr;
  */
 function evaluate(input, context) {
     var internalCtx = context_1.toInternalContext(context);
+    return result_1.toOutputResult(doEvaluate(input, internalCtx));
+}
+exports.evaluate = evaluate;
+function doEvaluate(input, internalCtx) {
     var parsed = parser.expression(internalCtx).parse(input);
     if (!result_1.isOk(parsed)) {
         return result_1.mapErr(parsed, function (e) { return errors.addPositionToError(input, e); });
@@ -41,4 +42,19 @@ function evaluate(input, context) {
         return result_1.err(e);
     }
 }
-exports.evaluate = evaluate;
+/**
+ * Prepare a context to be used in an `evaluate` call. This allows you to
+ * reuse a context across evaluations to avoid needing to prepare a new
+ * context each time and to share state across evaluations.
+ *
+ * NOTE: Without preparing a context, we do not make any special attempt
+ * to avoid mutating the context provided, but neither do we guarantee that
+ * it will be mutated and thus can be passed to several `evaluate` calls
+ * to share state. If you'd like to share state across calls, please use
+ * this method. If you don't want to share state, create a brand new
+ * context each time (for instance, via a function call)
+ */
+function prepareContext(context) {
+    return context_1.toInternalContext(context);
+}
+exports.prepareContext = prepareContext;
