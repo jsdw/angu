@@ -226,4 +226,69 @@ describe('index', function () {
         assert.equal(angu.evaluate('foo = foo + 2', preparedCtx).value, 12);
         assert.equal(angu.evaluate('foo = foo + 5', preparedCtx).value, 17);
     });
+    it('can implement basic control flow by controlling when args are evaluated', function () {
+        var good = false;
+        var bad = false;
+        var ctx = {
+            scope: {
+                // Only evaluates one of `then` or `otherwise`:
+                'if': function (cond, then, otherwise) {
+                    if (cond.eval()) {
+                        return then.eval();
+                    }
+                    else {
+                        return otherwise.eval();
+                    }
+                },
+                // Run these to set our good or bad variable:
+                'setGood': function () { good = true; },
+                'setBad': function () { bad = true; }
+            }
+        };
+        // Only setGood should be called:
+        good = false;
+        bad = false;
+        angu.evaluate('if(true, setGood(), setBad())', ctx);
+        assert.equal(good, true);
+        assert.equal(bad, false);
+        // Only setGood should be called:
+        good = false;
+        bad = false;
+        angu.evaluate('if(false, setBad(), setGood())', ctx);
+        assert.equal(good, true);
+        assert.equal(bad, false);
+    });
+    it('can implement basic short circuiting by controlling when args are evaluated', function () {
+        var good = false;
+        var bad = false;
+        var ctx = {
+            scope: {
+                // Evaluates to the first truthy result, short circuiting right:
+                '||': function (a, b) {
+                    // fallback to JS, which doesn't evaluate the expr on
+                    // the right if the left one is truthy:
+                    return a.eval() || b.eval();
+                },
+                // Run these to set our good or bad variable (setGood returns truthy):
+                'setGood': function () { good = true; return true; },
+                'setBad': function () { bad = true; }
+            }
+        };
+        // Only setGood should be called, evaluation stops before any `setBad` calls:
+        good = false;
+        bad = false;
+        angu.evaluate('setGood() || setBad() || setBad()', ctx);
+        assert.equal(good, true);
+        assert.equal(bad, false);
+        good = false;
+        bad = false;
+        angu.evaluate('false || setGood() || setBad() || setBad()', ctx);
+        assert.equal(good, true);
+        assert.equal(bad, false);
+        good = false;
+        bad = false;
+        angu.evaluate('false || false || setGood() || setBad() || setBad()', ctx);
+        assert.equal(good, true);
+        assert.equal(bad, false);
+    });
 });

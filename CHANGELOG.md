@@ -1,3 +1,12 @@
+# v0.7.0
+
+## Additions
+
+- `.` is now a valid character to use as an operator.
+- Numbers that end in `.` (eg "3.") will no longer consume the `.` on parsing, leaving it
+  to potentially be parsed as an operator instead.
+- Control flow examples have been added, and misc doc improvements.
+
 # v0.6.0
 
 ## Additions
@@ -6,7 +15,7 @@
   than needing to use standalone methods provided to do the same
 - `prepareContext` function added to allow state sharing across evaluate calls
 
-## Breaking Changed
+## Breaking Changes
 
 - `isOk` and `isErr` are no longer exported, but instead are available on the result
   of the `evaluate` call.

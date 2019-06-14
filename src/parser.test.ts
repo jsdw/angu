@@ -1,23 +1,23 @@
 import * as assert from 'assert'
 import * as parser from './parser'
 import { toInternalContext } from './context'
-import { ok, isOk, isErr } from './result'
+import { ok, isErr } from './result'
 
 const ID = (a: any) => a
 
 describe('parser', function() {
 
     it('parses basic numbers properly', () => {
-        assert.ok(isOk(parser.number().eval('1234')))
-        assert.ok(isOk(parser.number().eval('1234.56')))
-        assert.ok(isOk(parser.number().eval('1.21')))
-        assert.ok(isOk(parser.number().eval('-1.22')))
-        assert.ok(isOk(parser.number().eval('+1.23')))
-        assert.ok(isOk(parser.number().eval('0.5')))
-        assert.ok(isOk(parser.number().eval('0.91')))
-        assert.ok(isErr(parser.number().eval('.91')))
-        assert.ok(isErr(parser.number().eval('9.')))
-        assert.ok(isErr(parser.number().eval('.')))
+        assert.deepEqual(parser.number().parse('1234'), ok({ output: '1234', rest: '' }))
+        assert.deepEqual(parser.number().parse('1234.56'), ok({ output: '1234.56', rest: '' }))
+        assert.deepEqual(parser.number().parse('1.21'), ok({ output: '1.21', rest: '' }))
+        assert.deepEqual(parser.number().parse('-1.22'), ok({ output: '-1.22', rest: '' }))
+        assert.deepEqual(parser.number().parse('+1.23'), ok({ output: '+1.23', rest: '' }))
+        assert.deepEqual(parser.number().parse('0.5'), ok({ output: '0.5', rest: '' }))
+        assert.deepEqual(parser.number().parse('0.91'), ok({ output: '0.91', rest: '' }))
+        assert.deepEqual(parser.number().parse('9.'), ok({ output: '9', rest: '.' })) // fails to consume '.' if no numbers after it (could be an operator).
+        assert.ok(isErr(parser.number().parse('.91'))) // expects a number first so immediate fail
+        assert.ok(isErr(parser.number().parse('.'))) // expects a number first/last so immediate fail
     })
 
     it('parses strings with arbitrary delims properly', () => {
@@ -162,6 +162,39 @@ describe('parser', function() {
                 ]
             },
             rest: ''
+        }))
+    })
+
+    it('parses the `.` binary op OK despite it being used in numbers', () => {
+        const opts = toInternalContext({
+            scope: { '.': ID },
+        })
+        assertRoughlyEqual(parser.expression(opts).eval('3.2 . 3'), ok({
+            kind: 'functioncall',
+            name: '.',
+            infix: true,
+            args: [
+                { kind: 'number', value: 3.2, string: '3.2' },
+                { kind: 'number', value: 3, string: '3' }
+            ]
+        }))
+        assertRoughlyEqual(parser.expression(opts).eval('3.2.3'), ok({
+            kind: 'functioncall',
+            name: '.',
+            infix: true,
+            args: [
+                { kind: 'number', value: 3.2, string: '3.2' },
+                { kind: 'number', value: 3, string: '3' }
+            ]
+        }))
+        assertRoughlyEqual(parser.expression(opts).eval('3. 2.3'), ok({
+            kind: 'functioncall',
+            name: '.',
+            infix: true,
+            args: [
+                { kind: 'number', value: 3, string: '3' },
+                { kind: 'number', value: 2.3, string: '2.3' }
+            ]
         }))
     })
 

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:-]+$/;
+var OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:.-]+$/;
 function toInternalContext(ctx) {
     // Avoid preparing if we don't need to:
     if (isInternalContext(ctx))

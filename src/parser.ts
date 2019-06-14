@@ -195,30 +195,31 @@ export function parenExpression(opts: InternalContext): Parser<Expression> {
 // Helpful utility parsers:
 
 export function number(): Parser<string> {
+
+    let prefix = Parser.matchString('-')
+        .or(Parser.matchString('+'))
+        .optional()
+
+    let mantissa = Parser.matchString('.')
+        .andThen(_ => Parser.mustTakeWhile(NUMBER_REGEX))
+        .optional()
+
     return Parser.lazy(() => {
         let nStr: string = ""
-        return Parser.matchString('-')
-            .or(Parser.matchString('+'))
-            .optional()
-            .andThen(r => {
+        return prefix.andThen(r => {
                 if (isOk(r)) { nStr += r.value }
                 return Parser.mustTakeWhile(NUMBER_REGEX)
             })
             .andThen(r => {
                 nStr += r
-                return Parser.matchString('.').optional()
+                return mantissa
             })
-            .andThen(r => {
+            .map(r => {
                 if (isOk(r)) {
-                    nStr += '.'
-                    return Parser.mustTakeWhile(NUMBER_REGEX)
+                    return nStr + "." + r.value
                 } else {
-                    return Parser.ok('')
+                    return nStr
                 }
-            })
-            .andThen(r => {
-                nStr += r
-                return Parser.ok(nStr)
             })
     })
 }

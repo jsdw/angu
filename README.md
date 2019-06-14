@@ -86,7 +86,8 @@ that contains the error. Specific errors contain other information depending on 
 Angu supports the following literals:
 
 - booleans ('true' or 'false')
-- numbers
+- basic numbers (eg `+1.2`, `-3`, `100`, `10.23`, `-100.4`). Numbers have a string version of themselves stored
+  (as well as a numeric one) so that we can wrap things like big number libraries if we like.
 - strings (strings can be surrounded in ' or ", \'s inside a string escape the delimiter and themselves)
 
 Otherwise, it relies on operators and function calls to transform and manipulate them.
@@ -96,7 +97,7 @@ Otherwise, it relies on operators and function calls to transform and manipulate
 Any of the following characters can be used to define an operator:
 
 ```
-!£$%^&*@#~?<>|/+=;:-
+!£$%^&*@#~?<>|/+=;:.-
 ```
 
 Operators can be binary (taking two arguments) or unary.
@@ -108,9 +109,21 @@ spaces separating them; it knows exactly what to look out for.
 
 Functions/variables must start with an ascii character, and can then contain an ascii letter, number or underscore.
 
-If you'd like to use a function as an operator, prefix it with a single quote `'`.
+If you'd like to use a function as an operator, prefix it with a single quote `'`. Some valid function calls:
+
+```
+foo()
+foo(bar)
+foo(1,2)
+1 `foo` 2
+```
 
 If the variable you ask for is not found in the `scope` object, the evaluator will return the string name of the
 variable to the function/operator that's using it. This allows us to treat variables as basic string tokens when
-there is no more sensible way of treating them.
+there is no other sensible way of treating them.
+
+All values passed to functions on scope have the `Value` type. One can call `.eval()` on them to extract the literal
+value (string, bool, number, or whatever else) that they hold. Alternately, a `.raw()` method is available which returns
+the internal representation for the value. This allows you to inspect the raw syntax tree (see `expression.ts` for the
+shape of the thing returned), which provides more flexibility in how you can deal with the value.
 

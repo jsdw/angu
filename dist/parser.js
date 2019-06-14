@@ -191,12 +191,15 @@ function parenExpression(opts) {
 exports.parenExpression = parenExpression;
 // Helpful utility parsers:
 function number() {
+    var prefix = libparser_1.default.matchString('-')
+        .or(libparser_1.default.matchString('+'))
+        .optional();
+    var mantissa = libparser_1.default.matchString('.')
+        .andThen(function (_) { return libparser_1.default.mustTakeWhile(NUMBER_REGEX); })
+        .optional();
     return libparser_1.default.lazy(function () {
         var nStr = "";
-        return libparser_1.default.matchString('-')
-            .or(libparser_1.default.matchString('+'))
-            .optional()
-            .andThen(function (r) {
+        return prefix.andThen(function (r) {
             if (result_1.isOk(r)) {
                 nStr += r.value;
             }
@@ -204,20 +207,15 @@ function number() {
         })
             .andThen(function (r) {
             nStr += r;
-            return libparser_1.default.matchString('.').optional();
+            return mantissa;
         })
-            .andThen(function (r) {
+            .map(function (r) {
             if (result_1.isOk(r)) {
-                nStr += '.';
-                return libparser_1.default.mustTakeWhile(NUMBER_REGEX);
+                return nStr + "." + r.value;
             }
             else {
-                return libparser_1.default.ok('');
+                return nStr;
             }
-        })
-            .andThen(function (r) {
-            nStr += r;
-            return libparser_1.default.ok(nStr);
         });
     });
 }

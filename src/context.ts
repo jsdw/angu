@@ -29,7 +29,7 @@ export interface InternalContext {
 export type PrecedenceMap = { [op: string]: number }
 export type AssociativityMap = { [op: string]: 'left' | 'right' }
 
-const OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:-]+$/
+const OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:.-]+$/
 
 export function toInternalContext(ctx: ExternalContext | InternalContext): InternalContext {
 

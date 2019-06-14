@@ -14,16 +14,16 @@ var result_1 = require("./result");
 var ID = function (a) { return a; };
 describe('parser', function () {
     it('parses basic numbers properly', function () {
-        assert.ok(result_1.isOk(parser.number().eval('1234')));
-        assert.ok(result_1.isOk(parser.number().eval('1234.56')));
-        assert.ok(result_1.isOk(parser.number().eval('1.21')));
-        assert.ok(result_1.isOk(parser.number().eval('-1.22')));
-        assert.ok(result_1.isOk(parser.number().eval('+1.23')));
-        assert.ok(result_1.isOk(parser.number().eval('0.5')));
-        assert.ok(result_1.isOk(parser.number().eval('0.91')));
-        assert.ok(result_1.isErr(parser.number().eval('.91')));
-        assert.ok(result_1.isErr(parser.number().eval('9.')));
-        assert.ok(result_1.isErr(parser.number().eval('.')));
+        assert.deepEqual(parser.number().parse('1234'), result_1.ok({ output: '1234', rest: '' }));
+        assert.deepEqual(parser.number().parse('1234.56'), result_1.ok({ output: '1234.56', rest: '' }));
+        assert.deepEqual(parser.number().parse('1.21'), result_1.ok({ output: '1.21', rest: '' }));
+        assert.deepEqual(parser.number().parse('-1.22'), result_1.ok({ output: '-1.22', rest: '' }));
+        assert.deepEqual(parser.number().parse('+1.23'), result_1.ok({ output: '+1.23', rest: '' }));
+        assert.deepEqual(parser.number().parse('0.5'), result_1.ok({ output: '0.5', rest: '' }));
+        assert.deepEqual(parser.number().parse('0.91'), result_1.ok({ output: '0.91', rest: '' }));
+        assert.deepEqual(parser.number().parse('9.'), result_1.ok({ output: '9', rest: '.' })); // fails to consume '.' if no numbers after it (could be an operator).
+        assert.ok(result_1.isErr(parser.number().parse('.91'))); // expects a number first so immediate fail
+        assert.ok(result_1.isErr(parser.number().parse('.'))); // expects a number first/last so immediate fail
     });
     it('parses strings with arbitrary delims properly', function () {
         assertParsesStrings('"');
@@ -161,6 +161,38 @@ describe('parser', function () {
                 ]
             },
             rest: ''
+        }));
+    });
+    it('parses the `.` binary op OK despite it being used in numbers', function () {
+        var opts = context_1.toInternalContext({
+            scope: { '.': ID },
+        });
+        assertRoughlyEqual(parser.expression(opts).eval('3.2 . 3'), result_1.ok({
+            kind: 'functioncall',
+            name: '.',
+            infix: true,
+            args: [
+                { kind: 'number', value: 3.2, string: '3.2' },
+                { kind: 'number', value: 3, string: '3' }
+            ]
+        }));
+        assertRoughlyEqual(parser.expression(opts).eval('3.2.3'), result_1.ok({
+            kind: 'functioncall',
+            name: '.',
+            infix: true,
+            args: [
+                { kind: 'number', value: 3.2, string: '3.2' },
+                { kind: 'number', value: 3, string: '3' }
+            ]
+        }));
+        assertRoughlyEqual(parser.expression(opts).eval('3. 2.3'), result_1.ok({
+            kind: 'functioncall',
+            name: '.',
+            infix: true,
+            args: [
+                { kind: 'number', value: 3, string: '3' },
+                { kind: 'number', value: 2.3, string: '2.3' }
+            ]
         }));
     });
     it('parses binary ops taking precedence into account', function () {
