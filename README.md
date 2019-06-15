@@ -122,8 +122,12 @@ If the variable you ask for is not found in the `scope` object, the evaluator wi
 variable to the function/operator that's using it. This allows us to treat variables as basic string tokens when
 there is no other sensible way of treating them.
 
-All values passed to functions on scope have the `Value` type. One can call `.eval()` on them to extract the literal
-value (string, bool, number, or whatever else) that they hold. Alternately, a `.raw()` method is available which returns
-the internal representation for the value. This allows you to inspect the raw syntax tree (see `expression.ts` for the
-shape of the thing returned), which provides more flexibility in how you can deal with the value.
+All values passed to functions on scope have the `Value` type. One can call `.eval()` on them to evaluate them and
+return the value that that results in. Some other methods are also available:
+
+- `Value.kind()`: Return the kind of the Value ("string" | "number" | "variable" | "bool" | "functioncall").
+- `Value.pos()`: Return the start and end index of the original input string that represent this Value.
+- `Value.toString()`: (or `String(Value)`) gives back a string representation of the value, useful for debugging.
+- `Value.name()`: Gives back the "name" of the value. This is the function/variable name if applicable, else
+  true/false for bools, the string contents for strings, or the numeric representation for numbers.
 

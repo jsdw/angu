@@ -1,3 +1,16 @@
+# v0.8.0
+
+## Additions
+
+- `Values`, as given back to functions, now no longer expose the raw expression object
+  but instead provide several methods to access useful information for them.
+- Numeric parsing has been improved: exponents are now allowed, and slightly more
+  flexibility around how decimal points are handled.
+
+## Breaking Changes
+
+- no more `.raw()` function is available on Values.
+
 # v0.7.0
 
 ## Additions

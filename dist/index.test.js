@@ -64,7 +64,7 @@ describe('index', function () {
         // in `errors.ts` in order to see exactly what's available in
         // each case.
     });
-    it('allows access to variable information within function calls', function () {
+    it('allows access to various variable information within function calls', function () {
         var ctx = {
             scope: {
                 'info': function (a) {
@@ -95,8 +95,8 @@ describe('index', function () {
             pos: { start: 7, end: 10 },
             string: 'foo'
         });
-        // Strings are escaped if we stringify them, to approximate valid input that
-        // would have led to them:
+        // Strings are escaped if we stringify them, to approximate
+        // the valid input that would have led to them:
         assert.deepEqual(angu.evaluate('info("hello there \\\"john\\\"")', ctx).value, {
             value: 'hello there "john"',
             name: 'hello there "john"',
