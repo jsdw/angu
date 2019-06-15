@@ -74,6 +74,73 @@ describe('index', function(){
 
     })
 
+    it('allows access to various variable information within function calls', () => {
+
+        const ctx: angu.Context = {
+            scope: {
+                'info': (a: Any) => {
+                    return {
+                        value: a.eval(),
+                        name: a.name(),
+                        kind: a.kind(),
+                        pos: a.pos(),
+                        string: String(a)
+                    }
+                },
+                // Make an operator available for below:
+                '+': (a: Any, b: Any) => a.eval() + b.eval()
+            }
+        }
+
+        assert.deepEqual(angu.evaluate('info(foo)', ctx).value, {
+            value: 'foo',
+            name: 'foo',
+            kind: 'variable',
+            pos: { start: 5, end: 8 },
+            string: 'foo'
+        })
+
+        assert.deepEqual(angu.evaluate('  info(foo)', ctx).value, {
+            value: 'foo',
+            name: 'foo',
+            kind: 'variable',
+            // Note the position change as we shift everything forwards 2 spaces:
+            pos: { start: 7, end: 10 },
+            string: 'foo'
+        })
+
+        // Strings are escaped if we stringify them, to approximate
+        // the valid input that would have led to them:
+        assert.deepEqual(angu.evaluate('info("hello there \\\"john\\\"")', ctx).value, {
+            value: 'hello there "john"',
+            name: 'hello there "john"',
+            kind: 'string',
+            pos: { start: 5, end: 27 },
+            string: '"hello there \\"john\\""'
+        })
+
+        assert.deepEqual(angu.evaluate('info(+.9E12)', ctx).value, {
+            value: 0.9e12,
+            name: '0.9e12',
+            kind: 'number',
+            pos: { start: 5, end: 11 },
+            // the string rep for numbers is normalised (lowercase 'e', always trailing
+            // digit, never trailing +):
+            string: '0.9e12'
+        })
+
+        assert.deepEqual(angu.evaluate('info(1 + 2 + 3 + 4)', ctx).value, {
+            value: 10,
+            name: '+',
+            kind: 'functioncall',
+            pos: { start: 5, end: 18 },
+            // stringification wraps op calls in parens so that
+            // the evaluation order is obvious:
+            string: '(((1 + 2) + 3) + 4)'
+        })
+
+    })
+
     it('can be used to manipulate cells in a spreadsheet', () => {
 
         // Given some table of information (cols by letter, rows by number):
@@ -171,15 +238,14 @@ describe('index', function(){
                 },
                 // Let's allow multiple expressions, separated by ';':
                 ';': (a: Any, b: Any) => { a.eval(); return b.eval() },
-                // we can access raw, unevaluated args using the `.raw()`
-                // method provided on values.
+                // we can access the kind and name of input args. This
+                // allows us to do things like variable assignment:
                 '=': function(a: Any, b: Any) {
-                    const rawA = a.raw()
                     const resB = b.eval()
-                    if (rawA.kind === 'variable') {
-                        this.context.scope[rawA.name] = resB
+                    if (a.kind() === 'variable') {
+                        this.context.scope[a.name()] = resB
                     } else {
-                        throw Error(`Assignment expected a variable on the left but got a ${rawA.kind}`)
+                        throw Error(`Assignment expected a variable on the left but got a ${a.kind()}`)
                     }
                     return resB
                 },
@@ -224,12 +290,11 @@ describe('index', function(){
                 '+': (a: Any, b: Any) => a.eval() + b.eval(),
                 // Assignment op from earlier example:
                 '=': function(a: Any, b: Any) {
-                    const rawA = a.raw()
                     const resB = b.eval()
-                    if (rawA.kind === 'variable') {
-                        this.context.scope[rawA.name] = resB
+                    if (a.kind() === 'variable') {
+                        this.context.scope[a.name()] = resB
                     } else {
-                        throw Error(`Assignment expected a variable on the left but got a ${rawA.kind}`)
+                        throw Error(`Assignment expected a variable on the left but got a ${a.kind()}`)
                     }
                     return resB
                 }

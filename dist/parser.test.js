@@ -18,12 +18,19 @@ describe('parser', function () {
         assert.deepEqual(parser.number().parse('1234.56'), result_1.ok({ output: '1234.56', rest: '' }));
         assert.deepEqual(parser.number().parse('1.21'), result_1.ok({ output: '1.21', rest: '' }));
         assert.deepEqual(parser.number().parse('-1.22'), result_1.ok({ output: '-1.22', rest: '' }));
-        assert.deepEqual(parser.number().parse('+1.23'), result_1.ok({ output: '+1.23', rest: '' }));
+        assert.deepEqual(parser.number().parse('+1.23'), result_1.ok({ output: '1.23', rest: '' })); // note output standardisation to remove '+'
         assert.deepEqual(parser.number().parse('0.5'), result_1.ok({ output: '0.5', rest: '' }));
         assert.deepEqual(parser.number().parse('0.91'), result_1.ok({ output: '0.91', rest: '' }));
+        assert.deepEqual(parser.number().parse('.91'), result_1.ok({ output: '0.91', rest: '' })); // note output standardisation to add leading '0'
+        assert.deepEqual(parser.number().parse('9e2'), result_1.ok({ output: '9e2', rest: '' }));
+        assert.deepEqual(parser.number().parse('9E2'), result_1.ok({ output: '9e2', rest: '' })); // note output standardisation to 'e'
+        assert.deepEqual(parser.number().parse('.9E2'), result_1.ok({ output: '0.9e2', rest: '' }));
+        assert.deepEqual(parser.number().parse('1.9E10'), result_1.ok({ output: '1.9e10', rest: '' }));
         assert.deepEqual(parser.number().parse('9.'), result_1.ok({ output: '9', rest: '.' })); // fails to consume '.' if no numbers after it (could be an operator).
-        assert.ok(result_1.isErr(parser.number().parse('.91'))); // expects a number first so immediate fail
-        assert.ok(result_1.isErr(parser.number().parse('.'))); // expects a number first/last so immediate fail
+        assert.deepEqual(parser.number().parse('9.e2'), result_1.ok({ output: '9', rest: '.e2' })); // can't use '.' then exponent
+        assert.ok(result_1.isErr(parser.number().parse('.')));
+        assert.ok(result_1.isErr(parser.number().parse('e')));
+        assert.ok(result_1.isErr(parser.number().parse('E')));
     });
     it('parses strings with arbitrary delims properly', function () {
         assertParsesStrings('"');
@@ -47,7 +54,7 @@ describe('parser', function () {
             kind: 'number', value: -1, string: '-1'
         }));
         assertRoughlyEqual(parser.expression(opts).eval('+1'), result_1.ok({
-            kind: 'number', value: 1, string: '+1'
+            kind: 'number', value: 1, string: '1'
         }));
     });
     it('parses tokens properly', function () {

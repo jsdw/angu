@@ -194,24 +194,41 @@ function number() {
     var prefix = libparser_1.default.matchString('-')
         .or(libparser_1.default.matchString('+'))
         .optional();
+    var number = libparser_1.default.mustTakeWhile(NUMBER_REGEX);
     var mantissa = libparser_1.default.matchString('.')
-        .andThen(function (_) { return libparser_1.default.mustTakeWhile(NUMBER_REGEX); })
+        .andThen(function (_) { return number; });
+    var exponent = libparser_1.default.matchString('e', 'E')
+        .andThen(function (_) { return number; })
         .optional();
     return libparser_1.default.lazy(function () {
         var nStr = "";
         return prefix.andThen(function (r) {
-            if (result_1.isOk(r)) {
-                nStr += r.value;
+            if (result_1.isOk(r) && r.value === '-') {
+                nStr += r.value; // ignore +
             }
-            return libparser_1.default.mustTakeWhile(NUMBER_REGEX);
+            return number.optional();
         })
             .andThen(function (r) {
-            nStr += r;
-            return mantissa;
+            if (result_1.isOk(r)) {
+                nStr += r.value;
+                return mantissa.optional();
+            }
+            else {
+                // always have num before '.':
+                nStr += '0';
+                // if no num before, mantissa not optional:
+                return mantissa.map(function (m) { return result_1.ok(m); });
+            }
+        })
+            .andThen(function (r) {
+            if (result_1.isOk(r)) {
+                nStr += "." + r.value;
+            }
+            return exponent;
         })
             .map(function (r) {
             if (result_1.isOk(r)) {
-                return nStr + "." + r.value;
+                return nStr + "e" + r.value;
             }
             else {
                 return nStr;

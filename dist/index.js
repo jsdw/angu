@@ -35,7 +35,7 @@ function doEvaluate(input, internalCtx) {
         return result_1.err(errors.addPositionToError(input, e));
     }
     try {
-        var value = thunk.create(parsed.value.output, internalCtx);
+        var value = thunk.create(parsed.value.output, internalCtx, input.length);
         return result_1.ok(value.eval());
     }
     catch (e) {

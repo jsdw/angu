@@ -1,7 +1,7 @@
 import Parser from './libparser'
 import { Expression } from './expression'
 import { InternalContext } from './context'
-import { isOk } from './result';
+import { isOk, ok } from './result';
 
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
@@ -200,23 +200,43 @@ export function number(): Parser<string> {
         .or(Parser.matchString('+'))
         .optional()
 
+    let number = Parser.mustTakeWhile(NUMBER_REGEX)
+
     let mantissa = Parser.matchString('.')
-        .andThen(_ => Parser.mustTakeWhile(NUMBER_REGEX))
+        .andThen(_ => number)
+
+    let exponent = Parser.matchString('e', 'E')
+        .andThen(_ => number)
         .optional()
 
     return Parser.lazy(() => {
         let nStr: string = ""
         return prefix.andThen(r => {
-                if (isOk(r)) { nStr += r.value }
-                return Parser.mustTakeWhile(NUMBER_REGEX)
+                if (isOk(r) && r.value === '-') {
+                    nStr += r.value // ignore +
+                }
+                return number.optional()
             })
             .andThen(r => {
-                nStr += r
-                return mantissa
+                if (isOk(r)) {
+                    nStr += r.value
+                    return mantissa.optional()
+                } else {
+                    // always have num before '.':
+                    nStr += '0'
+                    // if no num before, mantissa not optional:
+                    return mantissa.map(m => ok(m))
+                }
+            })
+            .andThen(r => {
+                if (isOk(r)) {
+                    nStr += "." + r.value
+                }
+                return exponent
             })
             .map(r => {
                 if (isOk(r)) {
-                    return nStr + "." + r.value
+                    return nStr + "e" + r.value
                 } else {
                     return nStr
                 }

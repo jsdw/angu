@@ -1,12 +1,22 @@
 import { Expression } from './expression';
 import { InternalContext } from './context';
-export declare function create(expr: Expression, context: InternalContext): Value;
+export declare function create(expr: Expression, context: InternalContext, inputLength: number): Value;
 export declare class Value<T = any> {
+    readonly inputLength: number;
     readonly expr: Expression;
     readonly evaluateThunk: () => T;
-    constructor(expr: Expression, evaluateThunk: () => T);
+    constructor(inputLength: number, expr: Expression, evaluateThunk: () => T);
     /** Evaluate the thunk and return the resulting value */
     eval(): T;
-    /** Return the raw, unevaluated expression */
-    raw(): Expression;
+    /** Return the kind of the expression */
+    kind(): Expression['kind'];
+    /** Return the start and end position of the expression */
+    pos(): {
+        start: number;
+        end: number;
+    };
+    /** Return the string rep we have for this thing */
+    toString(): string;
+    /** Return the name of the thing (variable name/function name, or else string rep) */
+    name(): string;
 }

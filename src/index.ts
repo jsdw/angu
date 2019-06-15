@@ -32,7 +32,7 @@ function doEvaluate(input: string, internalCtx: InternalContext): Result<any, er
     }
 
     try {
-        const value = thunk.create(parsed.value.output, internalCtx)
+        const value = thunk.create(parsed.value.output, internalCtx, input.length)
         return ok(value.eval())
     } catch(e) {
         return err(e)

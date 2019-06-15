@@ -1,40 +1,40 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function create(expr, context) {
+function create(expr, context, inputLength) {
     switch (expr.kind) {
-        case 'variable': return thunkVariable(expr, context);
-        case 'number': return thunkNumber(expr, context);
-        case 'bool': return thunkBool(expr, context);
-        case 'functioncall': return thunkFunctioncall(expr, context);
-        case 'string': return thunkString(expr, context);
+        case 'variable': return thunkVariable(expr, context, inputLength);
+        case 'number': return thunkNumber(expr, context, inputLength);
+        case 'bool': return thunkBool(expr, context, inputLength);
+        case 'functioncall': return thunkFunctioncall(expr, context, inputLength);
+        case 'string': return thunkString(expr, context, inputLength);
     }
 }
 exports.create = create;
-function thunkVariable(expr, context) {
+function thunkVariable(expr, context, inputLength) {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
-    return new Value(expr, function () {
+    return new Value(inputLength, expr, function () {
         var res = (context.scope || EMPTY)[expr.name];
         return typeof res === 'undefined'
             ? expr.name
             : res;
     });
 }
-function thunkNumber(expr, _context) {
-    return new Value(expr, function () { return expr.value; });
+function thunkNumber(expr, _context, inputLength) {
+    return new Value(inputLength, expr, function () { return expr.value; });
 }
-function thunkBool(expr, _context) {
-    return new Value(expr, function () { return expr.value; });
+function thunkBool(expr, _context, inputLength) {
+    return new Value(inputLength, expr, function () { return expr.value; });
 }
-function thunkString(expr, _context) {
-    return new Value(expr, function () { return expr.value; });
+function thunkString(expr, _context, inputLength) {
+    return new Value(inputLength, expr, function () { return expr.value; });
 }
-function thunkFunctioncall(expr, context) {
-    return new Value(expr, function () {
+function thunkFunctioncall(expr, context, inputLength) {
+    return new Value(inputLength, expr, function () {
         var fn = (context.scope || EMPTY)[expr.name];
         if (typeof fn === 'function') {
             try {
-                return fn.apply({ context: context }, expr.args.map(function (arg) { return create(arg, context); }));
+                return fn.apply({ context: context }, expr.args.map(function (arg) { return create(arg, context, inputLength); }));
             }
             catch (e) {
                 var err = {
@@ -63,7 +63,8 @@ function thunkFunctioncall(expr, context) {
     });
 }
 var Value = /** @class */ (function () {
-    function Value(expr, evaluateThunk) {
+    function Value(inputLength, expr, evaluateThunk) {
+        this.inputLength = inputLength;
         this.expr = expr;
         this.evaluateThunk = evaluateThunk;
     }
@@ -71,11 +72,66 @@ var Value = /** @class */ (function () {
     Value.prototype.eval = function () {
         return this.evaluateThunk();
     };
-    /** Return the raw, unevaluated expression */
-    Value.prototype.raw = function () {
-        return this.expr;
+    /** Return the kind of the expression */
+    Value.prototype.kind = function () {
+        return this.expr.kind;
+    };
+    /** Return the start and end position of the expression */
+    Value.prototype.pos = function () {
+        var pos = this.expr.pos;
+        var len = this.inputLength;
+        return {
+            start: len - pos.startLen,
+            end: len - pos.endLen
+        };
+    };
+    /** Return the string rep we have for this thing */
+    Value.prototype.toString = function () {
+        return stringifyExpr(this.expr);
+    };
+    /** Return the name of the thing (variable name/function name, or else string rep) */
+    Value.prototype.name = function () {
+        return nameOfExpr(this.expr);
     };
     return Value;
 }());
 exports.Value = Value;
+function nameOfExpr(e) {
+    switch (e.kind) {
+        case 'variable': return e.name;
+        case 'bool': return String(e.value);
+        case 'number': return e.string;
+        case 'string': return e.value;
+        case 'functioncall': return e.name;
+    }
+    // type error if we can get here.
+}
+function stringifyExpr(e) {
+    switch (e.kind) {
+        case 'variable': return e.name;
+        case 'bool': return String(e.value);
+        case 'number': return e.string;
+        case 'string': return stringifyString(e);
+        case 'functioncall': return stringifyFunctionCall(e);
+    }
+    // type error if we can get here.
+}
+function stringifyFunctionCall(e) {
+    if (e.infix) {
+        if (e.args.length == 1) {
+            return e.name + "(" + stringifyExpr(e.args[0]) + ")";
+        }
+        else {
+            return "(" + stringifyExpr(e.args[0]) + " " + e.name + " " + stringifyExpr(e.args[1]) + ")";
+        }
+    }
+    else {
+        return e.name + "(" + e.args.map(stringifyExpr).join(", ") + ")";
+    }
+}
+function stringifyString(e) {
+    var s = e.value;
+    // crude escaping of things:
+    return '"' + s.replace(/(["\\])/g, '\\$1') + '"';
+}
 var EMPTY = {};
