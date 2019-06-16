@@ -76,24 +76,25 @@ describe('index', function () {
                         string: String(a)
                     };
                 },
+                'bar': 'Bar',
                 // Make an operator available for below:
                 '+': function (a, b) { return a.eval() + b.eval(); }
             }
         };
         assert.deepEqual(angu.evaluate('info(foo)', ctx).value, {
-            value: 'foo',
+            value: undefined,
             name: 'foo',
             kind: 'variable',
             pos: { start: 5, end: 8 },
             string: 'foo'
         });
-        assert.deepEqual(angu.evaluate('  info(foo)', ctx).value, {
-            value: 'foo',
-            name: 'foo',
+        assert.deepEqual(angu.evaluate('  info(bar)', ctx).value, {
+            value: 'Bar',
+            name: 'bar',
             kind: 'variable',
             // Note the position change as we shift everything forwards 2 spaces:
             pos: { start: 7, end: 10 },
-            string: 'foo'
+            string: 'bar'
         });
         // Strings are escaped if we stringify them, to approximate
         // the valid input that would have led to them:
@@ -141,12 +142,13 @@ describe('index', function () {
             return [rowIdx, colIdx];
         };
         var getValue = function (val) {
-            if (typeof val === 'string') {
-                var _a = getIdx(val), rowIdx = _a[0], colIdx = _a[1];
+            var v = val.eval() || val.name();
+            if (typeof v === 'string') {
+                var _a = getIdx(v), rowIdx = _a[0], colIdx = _a[1];
                 return table[rowIdx][colIdx];
             }
             else {
-                return val;
+                return v;
             }
         };
         var getRange = function (a, b) {
@@ -163,9 +165,9 @@ describe('index', function () {
         // ... We can define operators/functions to work on those cells:
         var ctx = {
             scope: {
-                '+': function (a, b) { return getValue(a.eval()) + getValue(b.eval()); },
-                '-': function (a, b) { return getValue(a.eval()) - getValue(b.eval()); },
-                ':': function (a, b) { return getRange(a.eval(), b.eval()); },
+                '+': function (a, b) { return getValue(a) + getValue(b); },
+                '-': function (a, b) { return getValue(a) - getValue(b); },
+                ':': function (a, b) { return getRange(a.name(), b.name()); },
                 'SUM': function (a) {
                     return a.eval().reduce(function (acc, n) { return acc + n; }, 0);
                 },
@@ -182,11 +184,6 @@ describe('index', function () {
         assert.equal(r2, 363);
         var r3 = angu.evaluate('MEAN(A1:A5) + SUM(C1:D2) - 10', ctx).value;
         assert.equal(r3, 412);
-        // Angu supports basic strings (surrounded by ' or "), which we can use
-        // interchangeably with tokens that aren't on scope and so are returned as
-        // strings:
-        var r4 = angu.evaluate('MEAN("A1":\'A5\') + SUM(C1:"D2") - 10', ctx).value;
-        assert.equal(r4, 412);
     });
     it('can be used to build up a basic language', function () {
         // Put the context behind a function to guarantee that no

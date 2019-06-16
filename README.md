@@ -1,8 +1,8 @@
 # Angu
 
 A small library that can be used to implement and safely evaluate DSLs (Domain Specific Languages)
-in the browser. You have complete control over every operation performed, and this library takes care of the
-nitty gritty of the parsing and such.
+in the browser or in NodeJS. You have complete control over every operation performed, and this library
+takes care of the nitty gritty of the parsing and such.
 
 Zero dependencies, and comes with typescript typings (usage optional).
 
@@ -32,7 +32,7 @@ Or a range of other things.
 In each case, we define the operators (optionally with precedence and associativity) and functions available
 to the program and exactly what they do with their arguments, and this library takes care of the rest.
 
-[Complete examples can be found here](https://github.com/jsdw/angu/blob/master/src/index.test.ts).
+[Complete examples can be found here][examples].
 
 # Installation
 
@@ -58,7 +58,8 @@ const ctx = {
         '/': (a, b) => a.eval() / b.eval(),
         '*': (a, b) => a.eval() * b.eval(),
     },
-    // And define the precedence to be as expected:
+    // And define the precedence to be as expected
+    // (first in array => evaluated first)
     precedence: [
         ['/', '*'],
         ['-', '+']
@@ -74,10 +75,10 @@ assert.equal(r1.value, 42)
 ```
 
 If something goes wrong evaluating the provided string, an error will be returned. All errors returned
-contain position information (`{ pos: { start, end} }`) describing the beginning and end of the string
-that contains the error. Specific errors contain other information depending on their `kind`.
+contain position information (`{ pos: { start, end}, ... }`) describing the beginning and end of the
+string that contains the error. Specific errors contain other information depending on their `kind`.
 
-[More examples can be found here](https://github.com/jsdw/angu/blob/master/src/index.test.ts).
+[More examples can be found here][examples].
 
 # Details
 
@@ -86,9 +87,13 @@ that contains the error. Specific errors contain other information depending on 
 Angu supports the following literals:
 
 - booleans ('true' or 'false')
-- basic numbers (eg `+1.2`, `-3`, `100`, `10.23`, `-100.4`). Numbers have a string version of themselves stored
-  (as well as a numeric one) so that we can wrap things like big number libraries if we like.
-- strings (strings can be surrounded in ' or ", \'s inside a string escape the delimiter and themselves)
+- numbers (eg `+1.2`, `-3`, `.9`, `100`, `10.23`, `-100.4`, `10e2`). Numbers have a string version of themselves stored
+  (as well as a numeric one) so that we can wrap things like big number libraries if we like. The string version
+  applies some normalisation which can help other libraries consume the numbers:
+  - The exponent is normalised to a lowercase 'e'.
+  - Leading '+' is removed.
+  - A decimal point, if provided, is always prefixed with a number ('0' if no number is given)
+- strings (strings can be surrounded in `'` or `"`, and `\`'s inside a string escape the delimiter and themselves)
 
 Otherwise, it relies on operators and function calls to transform and manipulate them.
 
@@ -100,16 +105,25 @@ Any of the following characters can be used to define an operator:
 !£$%^&*@#~?<>|/+=;:.-
 ```
 
-Operators can be binary (taking two arguments) or unary.
+Operators can be binary (taking two arguments) or unary. Unary operators cannot have a space between themselves and the
+expression that they are operating on.
 
-Operators not defined in scope will not be parsed. This allows the parser to properly handle multiple operators without any
-spaces separating them; it knows exactly what to look out for.
+Operators not defined in scope will not be parsed. This helps the parser properly handle multiple operators (eg binary
+and unary ops side by side), since it knows what it is looking for.
+
+Some valid operator based function calls (assuming the operators are in scope):
+
+```
+1+2/3
+1 + 2
+1 + !2
+```
 
 ## Functions/variables
 
 Functions/variables must start with an ascii character, and can then contain an ascii letter, number or underscore.
 
-If you'd like to use a function as an operator, prefix it with a single quote `'`. Some valid function calls:
+If you'd like to use a function as an operator, surround it with backticks. Some valid function calls:
 
 ```
 foo()
@@ -131,3 +145,6 @@ return the value that that results in. Some other methods are also available:
 - `Value.name()`: Gives back the "name" of the value. This is the function/variable name if applicable, else
   true/false for bools, the string contents for strings, or the numeric representation for numbers.
 
+See the [examples][examples] for more.
+
+[examples]: https://github.com/jsdw/angu/blob/master/src/index.test.ts

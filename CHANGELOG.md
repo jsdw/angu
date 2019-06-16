@@ -1,3 +1,11 @@
+# v0.9.0
+
+## Breaking Changes
+
+- `Value.eval()` now returns undefined if it's provided a variable which isn't
+  in scope. It used to return the token name instead in this case, but this can
+  now be obtained by using `Value.name()` in those cases where you'd want it.
+
 # v0.8.0
 
 ## Additions

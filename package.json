@@ -1,12 +1,12 @@
 {
   "name": "angu",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "A small interpreter for creating DSLs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "test": "tsc && mocha 'dist/*.test.js'",
-    "build": "tsc"
+    "build": "rm -rf ./dist && tsc"
   },
   "repository": {
     "type": "git",

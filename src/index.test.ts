@@ -87,26 +87,27 @@ describe('index', function(){
                         string: String(a)
                     }
                 },
+                'bar': 'Bar',
                 // Make an operator available for below:
                 '+': (a: Any, b: Any) => a.eval() + b.eval()
             }
         }
 
         assert.deepEqual(angu.evaluate('info(foo)', ctx).value, {
-            value: 'foo',
+            value: undefined,
             name: 'foo',
             kind: 'variable',
             pos: { start: 5, end: 8 },
             string: 'foo'
         })
 
-        assert.deepEqual(angu.evaluate('  info(foo)', ctx).value, {
-            value: 'foo',
-            name: 'foo',
+        assert.deepEqual(angu.evaluate('  info(bar)', ctx).value, {
+            value: 'Bar',
+            name: 'bar',
             kind: 'variable',
             // Note the position change as we shift everything forwards 2 spaces:
             pos: { start: 7, end: 10 },
-            string: 'foo'
+            string: 'bar'
         })
 
         // Strings are escaped if we stringify them, to approximate
@@ -160,12 +161,13 @@ describe('index', function(){
             const rowIdx = Number(str.slice(1)) - 1 // use rest as row index (1 indexed)
             return [rowIdx, colIdx]
         }
-        const getValue = (val: any): any => {
-            if (typeof val === 'string') {
-                const [rowIdx, colIdx] = getIdx(val)
+        const getValue = (val: Any): any => {
+            const v = val.eval() || val.name()
+            if (typeof v === 'string') {
+                const [rowIdx, colIdx] = getIdx(v)
                 return table[rowIdx][colIdx]
             } else {
-                return val
+                return v
             }
         }
         const getRange = (a: string, b: string): any[] => {
@@ -183,9 +185,9 @@ describe('index', function(){
         // ... We can define operators/functions to work on those cells:
         const ctx: angu.Context = {
             scope: {
-                '+': (a: Any, b: Any) => getValue(a.eval()) + getValue(b.eval()),
-                '-': (a: Any, b: Any) => getValue(a.eval()) - getValue(b.eval()),
-                ':': (a: Any, b: Any) => getRange(a.eval(), b.eval()),
+                '+': (a: Any, b: Any) => getValue(a) + getValue(b),
+                '-': (a: Any, b: Any) => getValue(a) - getValue(b),
+                ':': (a: Any, b: Any) => getRange(a.name(), b.name()),
                 'SUM': (a: angu.Value<number[]>) => {
                     return a.eval().reduce((acc, n) => acc + n, 0)
                 },
@@ -203,12 +205,6 @@ describe('index', function(){
         assert.equal(r2, 363)
         const r3 = angu.evaluate('MEAN(A1:A5) + SUM(C1:D2) - 10', ctx).value
         assert.equal(r3, 412)
-
-        // Angu supports basic strings (surrounded by ' or "), which we can use
-        // interchangeably with tokens that aren't on scope and so are returned as
-        // strings:
-        const r4 = angu.evaluate('MEAN("A1":\'A5\') + SUM(C1:"D2") - 10', ctx).value
-        assert.equal(r4, 412)
     })
 
     it('can be used to build up a basic language', () => {

@@ -16,10 +16,7 @@ function thunkVariable(expr: ExprVariable, context: InternalContext, inputLength
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
     return new Value(inputLength, expr, () => {
-        const res = (context.scope || EMPTY)[expr.name] as unknown
-        return typeof res === 'undefined'
-            ? expr.name
-            : res
+        return (context.scope || EMPTY)[expr.name]
     })
 }
 

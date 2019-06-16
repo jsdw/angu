@@ -14,10 +14,7 @@ function thunkVariable(expr, context, inputLength) {
     // If the variable doesn't exist, return its name. Assuming assignment
     // isn't implemented, this allows for primitive tokens.
     return new Value(inputLength, expr, function () {
-        var res = (context.scope || EMPTY)[expr.name];
-        return typeof res === 'undefined'
-            ? expr.name
-            : res;
+        return (context.scope || EMPTY)[expr.name];
     });
 }
 function thunkNumber(expr, _context, inputLength) {
