@@ -49,6 +49,6 @@ export declare type ParseErrorMustSepBy = {
     kind: 'MUST_SEP_BY';
     input: string;
 };
-/** Given the original input string, this function adds position info to  */
+/** Given the original input string, this function adds position info to the provided Error  */
 export declare function addPositionToError(fullInput: string, error: ErrorWithoutPosition): Error;
 export {};

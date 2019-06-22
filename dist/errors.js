@@ -11,7 +11,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-/** Given the original input string, this function adds position info to  */
+/** Given the original input string, this function adds position info to the provided Error  */
 function addPositionToError(fullInput, error) {
     var start;
     var end;

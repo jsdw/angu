@@ -5,6 +5,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "bench": "tsc && node dist/*.bench.js",
     "test": "tsc && mocha 'dist/*.test.js'",
     "build": "rm -rf ./dist && tsc"
   },
@@ -25,8 +26,10 @@
   "homepage": "https://github.com/jsdw/angu#readme",
   "devDependencies": {
     "@types/assert": "^1.4.2",
+    "@types/benchmark": "^1.0.31",
     "@types/mocha": "^5.2.7",
     "assert": "^2.0.0",
+    "benchmark": "^2.1.4",
     "mocha": "^6.1.4",
     "typescript": "^3.5.1"
   }

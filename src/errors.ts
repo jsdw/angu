@@ -77,7 +77,7 @@ export type ParseErrorMustSepBy = {
     input: string
 }
 
-/** Given the original input string, this function adds position info to  */
+/** Given the original input string, this function adds position info to the provided Error  */
 export function addPositionToError(fullInput: string, error: ErrorWithoutPosition): Error {
     let start: number
     let end: number
