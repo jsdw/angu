@@ -2,7 +2,7 @@
 
 ## Breaking Changes
 
-- `Value.eval()` now returns undefined if it's provided a variable which isn't
+- `Value.eval()` now returns undefined if `Value` is a variable which isn't
   in scope. It used to return the token name instead in this case, but this can
   now be obtained by using `Value.name()` in those cases where you'd want it.
 
