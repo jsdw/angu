@@ -12,15 +12,15 @@ var __assign = (this && this.__assign) || function () {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Given the original input string, this function adds position info to the provided Error  */
-function addPositionToError(fullInput, error) {
+function toOutputError(fullInput, error) {
     var start;
     var end;
     switch (error.kind) {
-        case 'MATCH_STRING':
-        case 'MUST_TAKE_WHILE':
-        case 'MUST_SEP_BY':
+        case 'EXPECTS_A_STRING':
+        case 'EXPECTS_PATTERN':
+        case 'EXPECTS_A_SEPARATOR':
         case 'NOT_CONSUMED_ALL':
-        case 'END_OF_STRING':
+        case 'EXPECTS_A_CHAR':
             start = fullInput.length - error.input.length;
             end = start;
             return __assign({}, error, { pos: { start: start, end: end } });
@@ -33,7 +33,7 @@ function addPositionToError(fullInput, error) {
     }
     neverHappens(error);
 }
-exports.addPositionToError = addPositionToError;
+exports.toOutputError = toOutputError;
 function neverHappens(_) {
     throw new Error('Cannot happen');
 }

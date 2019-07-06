@@ -1,9 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var libparser_1 = __importDefault(require("./libparser"));
+var libparser_1 = require("./libparser");
 var result_1 = require("./result");
 var NUMBER_REGEX = /[0-9]/;
 var TOKEN_START_REGEX = /[a-zA-Z]/;
@@ -51,7 +48,7 @@ function stringExpression() {
 }
 exports.stringExpression = stringExpression;
 function booleanExpression() {
-    return libparser_1.default.matchString('true', 'false')
+    return libparser_1.Parser.matchString('true', 'false')
         .mapWithPosition(function (boolStr, pos) {
         return {
             kind: 'bool',
@@ -145,15 +142,15 @@ function binaryOpExpression(opts) {
 }
 exports.binaryOpExpression = binaryOpExpression;
 function functioncallExpression(opts) {
-    return libparser_1.default.lazy(function () {
+    return libparser_1.Parser.lazy(function () {
         var name;
         var sep = ignoreWhitespace()
-            .andThen(function (_) { return libparser_1.default.matchString(','); })
+            .andThen(function (_) { return libparser_1.Parser.matchString(','); })
             .andThen(function (_) { return ignoreWhitespace(); });
         return token()
             .andThen(function (n) {
             name = n;
-            return libparser_1.default.matchString('(');
+            return libparser_1.Parser.matchString('(');
         })
             .andThen(function (_) {
             return expression(opts)
@@ -165,7 +162,7 @@ function functioncallExpression(opts) {
         })
             .andThen(function (r) {
             return ignoreWhitespace()
-                .andThen(function (_) { return libparser_1.default.matchString(')'); })
+                .andThen(function (_) { return libparser_1.Parser.matchString(')'); })
                 .map(function (_) { return r; });
         })
             .mapWithPosition(function (args, pos) {
@@ -175,32 +172,32 @@ function functioncallExpression(opts) {
 }
 exports.functioncallExpression = functioncallExpression;
 function parenExpression(opts) {
-    return libparser_1.default.lazy(function () {
+    return libparser_1.Parser.lazy(function () {
         var expr;
-        return libparser_1.default.matchString('(')
+        return libparser_1.Parser.matchString('(')
             .andThen(function (_) { return ignoreWhitespace(); })
             .andThen(function (_) { return expression(opts); })
             .andThen(function (e) {
             expr = e;
             return ignoreWhitespace();
         })
-            .andThen(function (_) { return libparser_1.default.matchString(')'); })
+            .andThen(function (_) { return libparser_1.Parser.matchString(')'); })
             .map(function (_) { return expr; });
     });
 }
 exports.parenExpression = parenExpression;
 // Helpful utility parsers:
 function number() {
-    var prefix = libparser_1.default.matchString('-')
-        .or(libparser_1.default.matchString('+'))
+    var prefix = libparser_1.Parser.matchString('-')
+        .or(libparser_1.Parser.matchString('+'))
         .optional();
-    var number = libparser_1.default.mustTakeWhile(NUMBER_REGEX);
-    var mantissa = libparser_1.default.matchString('.')
+    var number = libparser_1.Parser.mustTakeWhile(NUMBER_REGEX);
+    var mantissa = libparser_1.Parser.matchString('.')
         .andThen(function (_) { return number; });
-    var exponent = libparser_1.default.matchString('e', 'E')
+    var exponent = libparser_1.Parser.matchString('e', 'E')
         .andThen(function (_) { return number; })
         .optional();
-    return libparser_1.default.lazy(function () {
+    return libparser_1.Parser.lazy(function () {
         var nStr = "";
         return prefix.andThen(function (r) {
             if (result_1.isOk(r) && r.value === '-') {
@@ -238,37 +235,37 @@ function number() {
 }
 exports.number = number;
 function string(delim) {
-    var escapesAndEnds = libparser_1.default.matchString('\\\\', '\\' + delim, delim);
-    var restOfString = libparser_1.default.takeUntil(escapesAndEnds)
+    var escapesAndEnds = libparser_1.Parser.matchString('\\\\', '\\' + delim, delim);
+    var restOfString = libparser_1.Parser.takeUntil(escapesAndEnds)
         .andThen(function (c) {
         if (c.until === '\\' + delim)
             return restOfString.map(function (s) { return c.result + delim + s; });
         else if (c.until === '\\\\')
             return restOfString.map(function (s) { return c.result + '\\' + s; });
-        return libparser_1.default.ok(c.result);
+        return libparser_1.Parser.ok(c.result);
     });
-    return libparser_1.default.matchString("" + delim).andThen(function (_) { return restOfString; });
+    return libparser_1.Parser.matchString("" + delim).andThen(function (_) { return restOfString; });
 }
 exports.string = string;
 function token() {
-    return libparser_1.default.lazy(function () {
+    return libparser_1.Parser.lazy(function () {
         var s = "";
-        return libparser_1.default.mustTakeWhile(TOKEN_START_REGEX)
+        return libparser_1.Parser.mustTakeWhile(TOKEN_START_REGEX)
             .andThen(function (r) {
             s += r;
-            return libparser_1.default.takeWhile(TOKEN_BODY_REGEX);
+            return libparser_1.Parser.takeWhile(TOKEN_BODY_REGEX);
         })
             .andThen(function (r) {
             s += r;
-            return libparser_1.default.ok(s);
+            return libparser_1.Parser.ok(s);
         });
     });
 }
 exports.token = token;
 function op(opList) {
-    return libparser_1.default
+    return libparser_1.Parser
         // An op is either a valid op that's been provided on scope, or..
-        .matchString.apply(libparser_1.default
+        .matchString.apply(libparser_1.Parser
     // An op is either a valid op that's been provided on scope, or..
     , opList).map(function (s) { return ({ value: s, isOp: true }); })
         // ..a token that's being used infix:
@@ -276,14 +273,14 @@ function op(opList) {
 }
 exports.op = op;
 function infixFunction() {
-    return libparser_1.default.matchString(INFIX_TOK_SURROUND)
+    return libparser_1.Parser.matchString(INFIX_TOK_SURROUND)
         .andThen(token)
         .andThen(function (t) {
-        return libparser_1.default.matchString(INFIX_TOK_SURROUND).map(function (_) { return ({ value: t, isOp: false }); });
+        return libparser_1.Parser.matchString(INFIX_TOK_SURROUND).map(function (_) { return ({ value: t, isOp: false }); });
     });
 }
 function ignoreWhitespace() {
-    return libparser_1.default
+    return libparser_1.Parser
         .takeWhile(WHITESPACE_REGEX)
         .map(function (_) { return undefined; });
 }

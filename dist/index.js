@@ -28,11 +28,11 @@ exports.evaluate = evaluate;
 function doEvaluate(input, internalCtx) {
     var parsed = parser.expression(internalCtx).parse(input);
     if (!result_1.isOk(parsed)) {
-        return result_1.mapErr(parsed, function (e) { return errors.addPositionToError(input, e); });
+        return result_1.mapErr(parsed, function (e) { return errors.toOutputError(input, e); });
     }
     if (parsed.value.rest.length) {
         var e = { kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest };
-        return result_1.err(errors.addPositionToError(input, e));
+        return result_1.err(errors.toOutputError(input, e));
     }
     try {
         var value = thunk.create(parsed.value.output, internalCtx, input.length);

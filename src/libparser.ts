@@ -1,9 +1,9 @@
 import * as result from './result'
 import { Result } from './result'
-import { ParseError } from './errors'
+import { LibParseError } from './errors'
 
-type ParseResult<T> = Result<{ output: T, rest: string }, ParseError>
-type EvalResult<T> = Result<T, ParseError>
+type ParseResult<T,E> = Result<{ output: T, rest: string },E>
+type EvalResult<T,E> = Result<T,E>
 
 export type Pos = {
     /** How long is the input string at the start of parsing? */
@@ -13,61 +13,60 @@ export type Pos = {
 }
 
 type Pattern
-    = ((char: string) => boolean)
-    | string
+    = string
     | RegExp
 
-export default class Parser<T> {
-    private constructor(readonly _fn_: (input: string) => ParseResult<T>) {}
+export class Parser<T,E> {
+    private constructor(readonly _fn_: (input: string) => ParseResult<T, E>) {}
 
-    eval(input: string): EvalResult<T> {
+    eval(input: string): EvalResult<T,E> {
         const res = this._fn_(input)
         return result.map(res, val => val.output)
     }
 
-    parse(input: string): ParseResult<T> {
+    parse(input: string): ParseResult<T,E> {
         return this._fn_(input)
     }
 
     /** A parser that does nothing */
-    static ok<T>(val: T): Parser<T> {
+    static ok<T,E>(val: T): Parser<T,E> {
         return new Parser(input => {
             return result.ok({ output: val, rest: input })
         })
     }
 
     /** Any one character. Only fails on an empty string */
-    static anyChar(): Parser<string> {
+    static anyChar(): Parser<string,LibParseError> {
         return new Parser(input => {
             if (input.length) {
                 return result.ok({ output: input.slice(0,1), rest: input.slice(1) })
             } else {
-                return result.err({ kind: 'END_OF_STRING', input: "" })
+                return result.err({ kind: 'EXPECTS_A_CHAR', input: "" })
             }
         })
     }
 
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
-    static lazy<T>(fn: () => Parser<T>): Parser<T> {
+    static lazy<T,E>(fn: () => Parser<T,E>): Parser<T,E> {
         return new Parser(input => {
             return fn().parse(input)
         })
     }
 
     /** Return a parser that matches a given string */
-    static matchString(...strings: string[]): Parser<string> {
+    static matchString(...strings: string[]): Parser<string,LibParseError> {
         return new Parser(input => {
             for(const s of strings) {
                 if (input.slice(0, s.length) === s) {
                     return result.ok({ output: s, rest: input.slice(s.length) })
                 }
             }
-            return result.err({ kind: 'MATCH_STRING', expectedOneOf: strings, input })
+            return result.err({ kind: 'EXPECTS_A_STRING', expectedOneOf: strings, input })
         })
     }
 
     /** Take characters while the fn provided matches them to a max of n */
-    static takeWhileN(n: number, pat: Pattern): Parser<string> {
+    static takeWhileN(n: number, pat: Pattern): Parser<string,never> {
         const fn
             = pat instanceof RegExp ? (c: string) => pat.test(c)
             : typeof pat === 'string' ? (c: string) => pat === c
@@ -81,28 +80,28 @@ export default class Parser<T> {
         })
     }
 
-    static takeWhile(pat: Pattern): Parser<string> {
+    static takeWhile(pat: Pattern): Parser<string,never> {
         return Parser.takeWhileN(Infinity, pat)
     }
 
     /** Take characters while the fn provided matches them to a max of n */
-    static mustTakeWhileN(n: number, pat: Pattern): Parser<string> {
+    static mustTakeWhileN(n: number, pat: Pattern): Parser<string,LibParseError> {
         return new Parser(input => {
             const res = Parser.takeWhileN(n, pat).parse(input)
             if (result.isOk(res) && !res.value.output.length) {
-                return result.err({ kind: 'MUST_TAKE_WHILE', input })
+                return result.err({ kind: 'EXPECTS_PATTERN', expectedPattern: pat, input })
             } else {
                 return res
             }
         })
     }
 
-    static mustTakeWhile(pat: Pattern): Parser<string> {
+    static mustTakeWhile(pat: Pattern): Parser<string,LibParseError> {
         return Parser.mustTakeWhileN(Infinity, pat)
     }
 
     /** Run this on a parser to peek at the available position information (distances from end) */
-    mapWithPosition<T2>(fn: (res: T, pos: Pos) => T2): Parser<T2> {
+    mapWithPosition<T2>(fn: (res: T, pos: Pos) => T2): Parser<T2,E> {
         return new Parser(input => {
             return result.map(this.parse(input), val => {
                 const startLen = input.length
@@ -113,7 +112,7 @@ export default class Parser<T> {
     }
 
     /** Make the success of this parser optional */
-    optional(): Parser<Result<T, ParseError>> {
+    optional(): Parser<Result<T,E>,E> {
         return new Parser(input => {
             const res = this.parse(input)
             if (result.isOk(res)) {
@@ -129,7 +128,7 @@ export default class Parser<T> {
     }
 
     /** Map this parser result into something else */
-    map<T2>(fn: (result: T) => T2): Parser<T2> {
+    map<T2>(fn: (result: T) => T2): Parser<T2,E> {
         return new Parser(input => {
             return result.map(this.parse(input), val => {
                 return { output: fn(val.output), rest: val.rest }
@@ -137,8 +136,16 @@ export default class Parser<T> {
         })
     }
 
+    mapErr<E2>(fn: (err: E) => E2): Parser<T,E2> {
+        return new Parser(input => {
+            return result.mapErr(this.parse(input), err => {
+                return fn(err)
+            })
+        })
+    }
+
     /** Succeeds if the current parser or the one provided succeeds */
-    or(other: Parser<T>): Parser<T> {
+    or(other: Parser<T,E>): Parser<T,E> {
         return new Parser(input => {
             const res1 = this.parse(input)
             if (result.isErr(res1)) {
@@ -150,7 +157,7 @@ export default class Parser<T> {
     }
 
     /** Pass the result of the this parser to a function which returns the next parser */
-    andThen<T2>(next: (result: T) => Parser<T2>): Parser<T2> {
+    andThen<T2>(next: (result: T) => Parser<T2,E>): Parser<T2,E> {
         return new Parser(input => {
             const res1 = this.parse(input)
             if (result.isOk(res1)) {
@@ -161,7 +168,7 @@ export default class Parser<T> {
         })
     }
 
-    sepBy<S>(sep: Parser<S>): Parser<{ results: T[], separators: S[]}> {
+    sepBy<S>(sep: Parser<S,unknown>): Parser<{ results: T[], separators: S[]},never> {
         return new Parser(input => {
             let results: T[] = []
             let separators: S[] = []
@@ -189,18 +196,18 @@ export default class Parser<T> {
         })
     }
 
-    mustSepBy<S>(sep: Parser<S>): Parser<{ results: T[], separators: S[]}>  {
+    mustSepBy<S>(sep: Parser<S,unknown>): Parser<{ results: T[], separators: S[]},LibParseError>  {
         return new Parser(input => {
             const res = this.sepBy(sep).parse(input)
             if (result.isOk(res) && !res.value.output.separators.length) {
-                return result.err({ kind: 'MUST_SEP_BY', input })
+                return result.err({ kind: 'EXPECTS_A_SEPARATOR', input })
             } else {
                 return res
             }
         })
     }
 
-    static takeUntil<T>(untilParser: Parser<T>): Parser<{ result: string, until: T }> {
+    static takeUntil<T>(untilParser: Parser<T,unknown>): Parser<{ result: string, until: T },LibParseError> {
         return new Parser(input => {
             let back: string[] = []
             while (input.length) {
@@ -223,7 +230,7 @@ export default class Parser<T> {
                 }
             }
             return result.err({
-                kind: 'END_OF_STRING',
+                kind: 'EXPECTS_A_CHAR',
                 input: ''
             })
         })

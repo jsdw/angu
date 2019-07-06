@@ -1,7 +1,8 @@
-import Parser from './libparser'
+import { Parser } from './libparser'
 import { Expression } from './expression'
 import { InternalContext } from './context'
 import { isOk, ok } from './result';
+import { ParseError, LibParseError } from './errors'
 
 const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
@@ -9,8 +10,12 @@ const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
 const WHITESPACE_REGEX = /\s/
 const INFIX_TOK_SURROUND = "`"
 
+// Differentiate between parse errors we expose and those we handle internally.
+type ExternalParser<T> = Parser<T,ParseError>
+type InternalParser<T> = Parser<T,LibParseError>
+
 /** Parse any expression, consuming surrounding space. This is the primary entry point: */
-export function expression(opts: InternalContext): Parser<Expression> {
+export function expression(opts: InternalContext): ExternalParser<Expression> {
     const exprParser = binaryOpExpression(opts).or(binaryOpSubExpression(opts))
 
     return ignoreWhitespace()
@@ -21,7 +26,7 @@ export function expression(opts: InternalContext): Parser<Expression> {
 // When parsing binaryOpExpressions, we accept any sort of expression except
 // another binaryOpExpression, since that would consume the stuff the first
 // binaryOpExpr is trying to find.
-export function binaryOpSubExpression(opts: InternalContext): Parser<Expression> {
+export function binaryOpSubExpression(opts: InternalContext): InternalParser<Expression> {
     return parenExpression(opts)
         .or(stringExpression())
         .or(functioncallExpression(opts))
@@ -33,25 +38,25 @@ export function binaryOpSubExpression(opts: InternalContext): Parser<Expression>
 
 // Parse different types of expression:
 
-export function variableExpression(): Parser<Expression> {
+export function variableExpression(): InternalParser<Expression> {
     return token().mapWithPosition((tok, pos) => {
         return { kind: 'variable', name: tok, pos }
     })
 }
 
-export function numberExpression(): Parser<Expression> {
+export function numberExpression(): InternalParser<Expression> {
     return number().mapWithPosition((n, pos) => {
         return { kind: 'number', value: Number(n), string: n, pos }
     })
 }
 
-export function stringExpression(): Parser<Expression> {
+export function stringExpression(): InternalParser<Expression> {
     return string("'").or(string('"')).mapWithPosition((s, pos) => {
         return { kind: 'string', value: s, pos }
     })
 }
 
-export function booleanExpression(): Parser<Expression> {
+export function booleanExpression(): InternalParser<Expression> {
     return Parser.matchString('true', 'false')
         .mapWithPosition((boolStr, pos) => {
             return {
@@ -62,7 +67,7 @@ export function booleanExpression(): Parser<Expression> {
         })
 }
 
-export function unaryOpExpression(opts: InternalContext): Parser<Expression> {
+export function unaryOpExpression(opts: InternalContext): InternalParser<Expression> {
     return op(opts.ops).andThen(op => {
         return expression(opts).mapWithPosition((expr, pos) => {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos }
@@ -70,7 +75,7 @@ export function unaryOpExpression(opts: InternalContext): Parser<Expression> {
     })
 }
 
-export function binaryOpExpression(opts: InternalContext): Parser<Expression> {
+export function binaryOpExpression(opts: InternalContext): InternalParser<Expression> {
     const precedence = opts.precedence || {}
     const associativity = opts.associativity || {}
 
@@ -148,7 +153,7 @@ export function binaryOpExpression(opts: InternalContext): Parser<Expression> {
         })
 }
 
-export function functioncallExpression(opts: InternalContext): Parser<Expression> {
+export function functioncallExpression(opts: InternalContext): InternalParser<Expression> {
     return Parser.lazy(() => {
         let name: string
         const sep = ignoreWhitespace()
@@ -177,7 +182,7 @@ export function functioncallExpression(opts: InternalContext): Parser<Expression
 
 }
 
-export function parenExpression(opts: InternalContext): Parser<Expression> {
+export function parenExpression(opts: InternalContext): InternalParser<Expression> {
     return Parser.lazy(() => {
         let expr: Expression
         return Parser.matchString('(')
@@ -194,7 +199,7 @@ export function parenExpression(opts: InternalContext): Parser<Expression> {
 
 // Helpful utility parsers:
 
-export function number(): Parser<string> {
+export function number(): InternalParser<string> {
 
     let prefix = Parser.matchString('-')
         .or(Parser.matchString('+'))
@@ -244,10 +249,10 @@ export function number(): Parser<string> {
     })
 }
 
-export function string(delim: string): Parser<string> {
-    const escapesAndEnds: Parser<string>
+export function string(delim: string): InternalParser<string> {
+    const escapesAndEnds
         = Parser.matchString('\\\\', '\\' + delim, delim)
-    const restOfString: Parser<string> = Parser.takeUntil(escapesAndEnds)
+    const restOfString: InternalParser<string> = Parser.takeUntil(escapesAndEnds)
         .andThen(c => {
             if(c.until === '\\' + delim) return restOfString.map(s => c.result + delim + s)
             else if(c.until === '\\\\') return restOfString.map(s => c.result + '\\' + s)
@@ -256,7 +261,7 @@ export function string(delim: string): Parser<string> {
     return Parser.matchString(`${delim}`).andThen(_ => restOfString)
 }
 
-export function token(): Parser<string> {
+export function token(): InternalParser<string> {
     return Parser.lazy(() => {
         let s: string = ""
         return Parser.mustTakeWhile(TOKEN_START_REGEX)
@@ -272,7 +277,7 @@ export function token(): Parser<string> {
 }
 
 type Op = { value: string, isOp: boolean }
-export function op(opList: string[]): Parser<Op> {
+export function op(opList: string[]): InternalParser<Op> {
     return Parser
         // An op is either a valid op that's been provided on scope, or..
         .matchString(...opList).map(s => ({ value: s, isOp: true }))
@@ -280,7 +285,7 @@ export function op(opList: string[]): Parser<Op> {
         .or(infixFunction())
 }
 
-function infixFunction(): Parser<Op> {
+function infixFunction(): InternalParser<Op> {
     return Parser.matchString(INFIX_TOK_SURROUND)
         .andThen(token)
         .andThen(t => {
@@ -288,7 +293,7 @@ function infixFunction(): Parser<Op> {
         })
 }
 
-export function ignoreWhitespace(): Parser<void> {
+export function ignoreWhitespace(): InternalParser<void> {
     return Parser
         .takeWhile(WHITESPACE_REGEX)
         .map(_ => undefined)

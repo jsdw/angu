@@ -52,41 +52,46 @@ export type InterpretError = {
     input: string
 }
 
-/** Parse error */
-export type ParseError
-    = ParseErrorMatchString
-    | ParseErrorMustTakeWhile
-    | ParseErrorMustSepBy
-    | ParseErrorEndOfString
+/** Externally facing parse errors */
+export type ParseError = LibParseError
 
-export type ParseErrorEndOfString = {
-    kind: 'END_OF_STRING',
-    input: ""
+/** Internal parse errors from libparser */
+export type LibParseError
+    = LibParseErrorMatchString
+    | LibParseErrorMustTakeWhile
+    | LibParseErrorMustSepBy
+    | LibParseErrorEndOfString
+
+export type LibParseErrorEndOfString = {
+    kind: 'EXPECTS_A_CHAR',
+    input: "",
+    expects?: string
 }
-export type ParseErrorMatchString = {
-    kind: 'MATCH_STRING'
+export type LibParseErrorMatchString = {
+    kind: 'EXPECTS_A_STRING'
     expectedOneOf: string[]
     input: string
 }
-export type ParseErrorMustTakeWhile = {
-    kind: 'MUST_TAKE_WHILE'
+export type LibParseErrorMustTakeWhile = {
+    kind: 'EXPECTS_PATTERN',
+    expectedPattern: RegExp | String
     input: string
 }
-export type ParseErrorMustSepBy = {
-    kind: 'MUST_SEP_BY'
+export type LibParseErrorMustSepBy = {
+    kind: 'EXPECTS_A_SEPARATOR'
     input: string
 }
 
 /** Given the original input string, this function adds position info to the provided Error  */
-export function addPositionToError(fullInput: string, error: ErrorWithoutPosition): Error {
+export function toOutputError(fullInput: string, error: ErrorWithoutPosition): Error {
     let start: number
     let end: number
     switch(error.kind) {
-        case 'MATCH_STRING':
-        case 'MUST_TAKE_WHILE':
-        case 'MUST_SEP_BY':
+        case 'EXPECTS_A_STRING':
+        case 'EXPECTS_PATTERN':
+        case 'EXPECTS_A_SEPARATOR':
         case 'NOT_CONSUMED_ALL':
-        case 'END_OF_STRING':
+        case 'EXPECTS_A_CHAR':
             start = fullInput.length - error.input.length
             end = start
             return { ...error, pos: { start, end } }

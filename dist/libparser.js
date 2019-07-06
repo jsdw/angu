@@ -32,7 +32,7 @@ var Parser = /** @class */ (function () {
                 return result.ok({ output: input.slice(0, 1), rest: input.slice(1) });
             }
             else {
-                return result.err({ kind: 'END_OF_STRING', input: "" });
+                return result.err({ kind: 'EXPECTS_A_CHAR', input: "" });
             }
         });
     };
@@ -55,7 +55,7 @@ var Parser = /** @class */ (function () {
                     return result.ok({ output: s, rest: input.slice(s.length) });
                 }
             }
-            return result.err({ kind: 'MATCH_STRING', expectedOneOf: strings, input: input });
+            return result.err({ kind: 'EXPECTS_A_STRING', expectedOneOf: strings, input: input });
         });
     };
     /** Take characters while the fn provided matches them to a max of n */
@@ -79,7 +79,7 @@ var Parser = /** @class */ (function () {
         return new Parser(function (input) {
             var res = Parser.takeWhileN(n, pat).parse(input);
             if (result.isOk(res) && !res.value.output.length) {
-                return result.err({ kind: 'MUST_TAKE_WHILE', input: input });
+                return result.err({ kind: 'EXPECTS_PATTERN', expectedPattern: pat, input: input });
             }
             else {
                 return res;
@@ -123,6 +123,14 @@ var Parser = /** @class */ (function () {
         return new Parser(function (input) {
             return result.map(_this.parse(input), function (val) {
                 return { output: fn(val.output), rest: val.rest };
+            });
+        });
+    };
+    Parser.prototype.mapErr = function (fn) {
+        var _this = this;
+        return new Parser(function (input) {
+            return result.mapErr(_this.parse(input), function (err) {
+                return fn(err);
             });
         });
     };
@@ -187,7 +195,7 @@ var Parser = /** @class */ (function () {
         return new Parser(function (input) {
             var res = _this.sepBy(sep).parse(input);
             if (result.isOk(res) && !res.value.output.separators.length) {
-                return result.err({ kind: 'MUST_SEP_BY', input: input });
+                return result.err({ kind: 'EXPECTS_A_SEPARATOR', input: input });
             }
             else {
                 return res;
@@ -217,11 +225,11 @@ var Parser = /** @class */ (function () {
                 }
             }
             return result.err({
-                kind: 'END_OF_STRING',
+                kind: 'EXPECTS_A_CHAR',
                 input: ''
             });
         });
     };
     return Parser;
 }());
-exports.default = Parser;
+exports.Parser = Parser;

@@ -23,12 +23,12 @@ function doEvaluate(input: string, internalCtx: InternalContext): Result<any, er
     const parsed = parser.expression(internalCtx).parse(input)
 
     if (!isOk(parsed)) {
-        return mapErr(parsed, e => errors.addPositionToError(input, e))
+        return mapErr(parsed, e => errors.toOutputError(input, e))
     }
 
     if (parsed.value.rest.length) {
         let e: errors.InterpretError = { kind: 'NOT_CONSUMED_ALL', input: parsed.value.rest }
-        return err(errors.addPositionToError(input, e))
+        return err(errors.toOutputError(input, e))
     }
 
     try {

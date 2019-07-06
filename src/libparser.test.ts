@@ -1,11 +1,11 @@
-import Parser from './libparser'
+import { Parser } from './libparser'
 import { isOk, isErr, ok, err } from './result'
 import * as assert from 'assert'
 
 describe("libparser", function() {
 
     it('can match any character', () => {
-        assert.deepEqual(Parser.anyChar().parse(''), err({ kind: 'END_OF_STRING', input: '' }))
+        assert.deepEqual(Parser.anyChar().parse(''), err({ kind: 'EXPECTS_A_CHAR', input: '' }))
         assert.deepEqual(Parser.anyChar().parse('a'), ok({ output: 'a', rest: '' }))
         assert.deepEqual(Parser.anyChar().parse('*'), ok({ output: '*', rest: '' }))
         assert.deepEqual(Parser.anyChar().parse('abc'), ok({ output: 'a', rest: 'bc' }))
@@ -38,16 +38,16 @@ describe("libparser", function() {
     }
 
     it('can takeWhile', function () {
-        expectDoesTakeWhile(c => /[a-z]/.test(c), 'foo', '123', 'foo123')
-        expectDoesTakeWhile(c => /[0-9]/.test(c), '123', 'foo', '123foo')
-        expectDoesTakeWhile(c => /[0-9]/.test(c), '', 'foo123', 'foo123')
-        expectDoesTakeWhile(c => /[0-9a-z]/.test(c), '123foo', '', '123foo')
+        expectDoesTakeWhile(/[a-z]/, 'foo', '123', 'foo123')
+        expectDoesTakeWhile(/[0-9]/, '123', 'foo', '123foo')
+        expectDoesTakeWhile(/[0-9]/, '', 'foo123', 'foo123')
+        expectDoesTakeWhile(/[0-9a-z]/, '123foo', '', '123foo')
     })
     function expectDoesTakeWhile(
-        fn: (c: string) => boolean,
+        re: RegExp,
         m: string, r: string, s: string) {
         const res = Parser
-            .takeWhile(fn)
+            .takeWhile(re)
             .parse(s)
         assert.ok(isOk(res))
         if (isOk(res)) {
@@ -57,13 +57,13 @@ describe("libparser", function() {
     }
 
     it('can takeUntil', () => {
-        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('foo'), err({ kind: 'END_OF_STRING', input: '' }))
+        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('foo'), err({ kind: 'EXPECTS_A_CHAR', input: '' }))
         assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('fool'), ok({ output: { result: 'foo', until: 'l' }, rest: '' }))
         assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('list'), ok({ output: { result: '', until: 'l' }, rest: 'ist' }))
     })
 
     it('will get at least one char back from mustTakeWhile', () => {
-        const p = Parser.mustTakeWhile(c => /[0-9]/.test(c))
+        const p = Parser.mustTakeWhile(/[0-9]/)
 
         assert.deepEqual(p.parse('123foo'), ok({ output: '123', rest: 'foo' }))
         assert.deepEqual(p.parse('1foo'), ok({ output: '1', rest: 'foo' }))
@@ -87,7 +87,7 @@ describe("libparser", function() {
     it('can chain parsers with andThen', () => {
         const p = Parser.matchString('foo')
             .andThen(r1 => Parser.matchString('bar').map(r2 => [r1, r2]))
-            .andThen(([r1,r2]) => Parser.takeWhile(a => /[a-z]/.test(a)).map(r3 => [r1,r2,r3]))
+            .andThen(([r1,r2]) => Parser.takeWhile(/[a-z]/).map(r3 => [r1,r2,r3]))
 
         assert.deepEqual(p.parse('foobare'), ok({ output: ['foo', 'bar', 'e'], rest: '' }))
         assert.deepEqual(p.parse('foobarr1'), ok({ output: ['foo', 'bar', 'r'], rest: '1' }))
