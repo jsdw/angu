@@ -7,12 +7,18 @@ var WHITESPACE_REGEX = /\s/;
 var INFIX_TOK_SURROUND = "`";
 /** Parse any expression, consuming surrounding space. This is the primary entry point: */
 function expression(opts) {
+    return anyExpression(opts).mapErr(function (e) {
+        return { kind: 'PARSE_ERROR', input: e.input };
+    });
+}
+exports.expression = expression;
+function anyExpression(opts) {
     var exprParser = binaryOpExpression(opts).or(binaryOpSubExpression(opts));
     return ignoreWhitespace()
         .andThen(function (_) { return exprParser; })
         .andThen(function (e) { return ignoreWhitespace().map(function (_) { return e; }); });
 }
-exports.expression = expression;
+exports.anyExpression = anyExpression;
 // When parsing binaryOpExpressions, we accept any sort of expression except
 // another binaryOpExpression, since that would consume the stuff the first
 // binaryOpExpr is trying to find.
@@ -58,7 +64,7 @@ function booleanExpression() {
 exports.booleanExpression = booleanExpression;
 function unaryOpExpression(opts) {
     return op(opts.ops).andThen(function (op) {
-        return expression(opts).mapWithPosition(function (expr, pos) {
+        return anyExpression(opts).mapWithPosition(function (expr, pos) {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos: pos };
         });
     });
@@ -151,7 +157,7 @@ function functioncallExpression(opts) {
             return libparser_1.Parser.matchString('(');
         })
             .andThen(function (_) {
-            return expression(opts)
+            return anyExpression(opts)
                 .sepBy(sep)
                 .map(function (_a) {
                 var results = _a.results;
@@ -174,7 +180,7 @@ function parenExpression(opts) {
         var expr;
         return libparser_1.Parser.matchString('(')
             .andThen(function (_) { return ignoreWhitespace(); })
-            .andThen(function (_) { return expression(opts); })
+            .andThen(function (_) { return anyExpression(opts); })
             .andThen(function (e) {
             expr = e;
             return ignoreWhitespace();

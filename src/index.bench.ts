@@ -29,6 +29,16 @@ benchmark('Angu basic operator eval', function () {
     assert.equal(v.value, 36)
 })
 
+const basicOperatorEvalPreparedCtx = angu.prepareContext({
+    scope: {
+        '+': (a: angu.Value, b: angu.Value) => a.eval() + b.eval()
+    }
+})
+benchmark('Angu basic operator eval with prepared context', function () {
+    const v = angu.evaluate("1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3", basicOperatorEvalPreparedCtx)
+    assert.equal(v.value, 36)
+})
+
 benchmark('Basic string eval', function () {
     assert.equal(angu.evaluate("'Hello \\' There'", {}).value, "Hello ' There")
 })

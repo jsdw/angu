@@ -1,6 +1,5 @@
 import * as result from './result'
 import { Result } from './result'
-import { LibParseError } from './errors'
 
 type ParseResult<T,E> = Result<{ output: T, rest: string },E>
 type EvalResult<T,E> = Result<T,E>
@@ -15,6 +14,38 @@ export type Pos = {
 type Pattern
     = string
     | RegExp
+
+/** Internal, low level parse errors */
+export type LibParseError
+    = LibParseErrorMatchString
+    | LibParseErrorMustTakeWhile
+    | LibParseErrorMustSepBy
+    | LibParseErrorEndOfString
+    | LibParseErrorNotANumber
+
+type LibParseErrorNotANumber = {
+    kind: 'NOT_A_NUMBER'
+    input: string
+}
+type LibParseErrorEndOfString = {
+    kind: 'EXPECTS_A_CHAR'
+    input: ""
+    expects?: string
+}
+type LibParseErrorMatchString = {
+    kind: 'EXPECTS_A_STRING'
+    expectedOneOf: string[]
+    input: string
+}
+type LibParseErrorMustTakeWhile = {
+    kind: 'EXPECTS_PATTERN'
+    expectedPattern: RegExp | String
+    input: string
+}
+type LibParseErrorMustSepBy = {
+    kind: 'EXPECTS_A_SEPARATOR'
+    input: string
+}
 
 export class Parser<T,E> {
     private constructor(readonly _fn_: (input: string) => ParseResult<T, E>) {}

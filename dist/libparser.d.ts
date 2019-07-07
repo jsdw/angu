@@ -1,5 +1,4 @@
 import { Result } from './result';
-import { LibParseError } from './errors';
 declare type ParseResult<T, E> = Result<{
     output: T;
     rest: string;
@@ -12,6 +11,31 @@ export declare type Pos = {
     endLen: number;
 };
 declare type Pattern = string | RegExp;
+/** Internal, low level parse errors */
+export declare type LibParseError = LibParseErrorMatchString | LibParseErrorMustTakeWhile | LibParseErrorMustSepBy | LibParseErrorEndOfString | LibParseErrorNotANumber;
+declare type LibParseErrorNotANumber = {
+    kind: 'NOT_A_NUMBER';
+    input: string;
+};
+declare type LibParseErrorEndOfString = {
+    kind: 'EXPECTS_A_CHAR';
+    input: "";
+    expects?: string;
+};
+declare type LibParseErrorMatchString = {
+    kind: 'EXPECTS_A_STRING';
+    expectedOneOf: string[];
+    input: string;
+};
+declare type LibParseErrorMustTakeWhile = {
+    kind: 'EXPECTS_PATTERN';
+    expectedPattern: RegExp | String;
+    input: string;
+};
+declare type LibParseErrorMustSepBy = {
+    kind: 'EXPECTS_A_SEPARATOR';
+    input: string;
+};
 export declare class Parser<T, E> {
     readonly _fn_: (input: string) => ParseResult<T, E>;
     private constructor();

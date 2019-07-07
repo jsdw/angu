@@ -36,6 +36,15 @@ benchmark('Angu basic operator eval', function () {
     var v = angu.evaluate("1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3", ctx);
     assert_1.default.equal(v.value, 36);
 });
+var basicOperatorEvalPreparedCtx = angu.prepareContext({
+    scope: {
+        '+': function (a, b) { return a.eval() + b.eval(); }
+    }
+});
+benchmark('Angu basic operator eval with prepared context', function () {
+    var v = angu.evaluate("1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3 + 1 + 2 + 3", basicOperatorEvalPreparedCtx);
+    assert_1.default.equal(v.value, 36);
+});
 benchmark('Basic string eval', function () {
     assert_1.default.equal(angu.evaluate("'Hello \\' There'", {}).value, "Hello ' There");
 });

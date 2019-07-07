@@ -1,7 +1,7 @@
-import { Parser } from './libparser'
+import { Parser, LibParseError } from './libparser'
 import { Expression } from './expression'
 import { InternalContext } from './context'
-import { ParseError, LibParseError } from './errors'
+import { ParseError } from './errors'
 
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
@@ -14,6 +14,12 @@ type InternalParser<T> = Parser<T,LibParseError>
 
 /** Parse any expression, consuming surrounding space. This is the primary entry point: */
 export function expression(opts: InternalContext): ExternalParser<Expression> {
+    return anyExpression(opts).mapErr(e => {
+        return { kind: 'PARSE_ERROR', input: e.input }
+    })
+}
+
+export function anyExpression(opts: InternalContext): InternalParser<Expression> {
     const exprParser = binaryOpExpression(opts).or(binaryOpSubExpression(opts))
 
     return ignoreWhitespace()
@@ -67,7 +73,7 @@ export function booleanExpression(): InternalParser<Expression> {
 
 export function unaryOpExpression(opts: InternalContext): InternalParser<Expression> {
     return op(opts.ops).andThen(op => {
-        return expression(opts).mapWithPosition((expr, pos) => {
+        return anyExpression(opts).mapWithPosition((expr, pos) => {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos }
         })
     })
@@ -164,7 +170,7 @@ export function functioncallExpression(opts: InternalContext): InternalParser<Ex
                 return Parser.matchString('(')
             })
             .andThen(_ => {
-                return expression(opts)
+                return anyExpression(opts)
                     .sepBy(sep)
                     .map(({ results }) => results)
             })
@@ -185,7 +191,7 @@ export function parenExpression(opts: InternalContext): InternalParser<Expressio
         let expr: Expression
         return Parser.matchString('(')
             .andThen(_ => ignoreWhitespace())
-            .andThen(_ => expression(opts))
+            .andThen(_ => anyExpression(opts))
             .andThen(e => {
                 expr = e
                 return ignoreWhitespace()

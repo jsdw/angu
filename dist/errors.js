@@ -16,12 +16,8 @@ function toOutputError(fullInput, error) {
     var start;
     var end;
     switch (error.kind) {
-        case 'EXPECTS_A_STRING':
-        case 'EXPECTS_PATTERN':
-        case 'EXPECTS_A_SEPARATOR':
+        case 'PARSE_ERROR':
         case 'NOT_CONSUMED_ALL':
-        case 'EXPECTS_A_CHAR':
-        case 'NOT_A_NUMBER':
             start = fullInput.length - error.input.length;
             end = start;
             return __assign({}, error, { pos: { start: start, end: end } });

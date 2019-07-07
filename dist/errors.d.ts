@@ -31,30 +31,8 @@ export declare type InterpretError = {
     input: string;
 };
 /** Externally facing parse errors */
-export declare type ParseError = LibParseError;
-/** Internal parse errors from libparser */
-export declare type LibParseError = LibParseErrorMatchString | LibParseErrorMustTakeWhile | LibParseErrorMustSepBy | LibParseErrorEndOfString | LibParseErrorNotANumber;
-export declare type LibParseErrorNotANumber = {
-    kind: 'NOT_A_NUMBER';
-    input: string;
-};
-export declare type LibParseErrorEndOfString = {
-    kind: 'EXPECTS_A_CHAR';
-    input: "";
-    expects?: string;
-};
-export declare type LibParseErrorMatchString = {
-    kind: 'EXPECTS_A_STRING';
-    expectedOneOf: string[];
-    input: string;
-};
-export declare type LibParseErrorMustTakeWhile = {
-    kind: 'EXPECTS_PATTERN';
-    expectedPattern: RegExp | String;
-    input: string;
-};
-export declare type LibParseErrorMustSepBy = {
-    kind: 'EXPECTS_A_SEPARATOR';
+export declare type ParseError = {
+    kind: 'PARSE_ERROR';
     input: string;
 };
 /** Given the original input string, this function adds position info to the provided Error  */

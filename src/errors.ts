@@ -53,38 +53,8 @@ export type InterpretError = {
 }
 
 /** Externally facing parse errors */
-export type ParseError = LibParseError
-
-/** Internal parse errors from libparser */
-export type LibParseError
-    = LibParseErrorMatchString
-    | LibParseErrorMustTakeWhile
-    | LibParseErrorMustSepBy
-    | LibParseErrorEndOfString
-    | LibParseErrorNotANumber
-
-
-export type LibParseErrorNotANumber = {
-    kind: 'NOT_A_NUMBER'
-    input: string
-}
-export type LibParseErrorEndOfString = {
-    kind: 'EXPECTS_A_CHAR'
-    input: ""
-    expects?: string
-}
-export type LibParseErrorMatchString = {
-    kind: 'EXPECTS_A_STRING'
-    expectedOneOf: string[]
-    input: string
-}
-export type LibParseErrorMustTakeWhile = {
-    kind: 'EXPECTS_PATTERN'
-    expectedPattern: RegExp | String
-    input: string
-}
-export type LibParseErrorMustSepBy = {
-    kind: 'EXPECTS_A_SEPARATOR'
+export type ParseError = {
+    kind: 'PARSE_ERROR'
     input: string
 }
 
@@ -93,12 +63,8 @@ export function toOutputError(fullInput: string, error: ErrorWithoutPosition): E
     let start: number
     let end: number
     switch(error.kind) {
-        case 'EXPECTS_A_STRING':
-        case 'EXPECTS_PATTERN':
-        case 'EXPECTS_A_SEPARATOR':
+        case 'PARSE_ERROR':
         case 'NOT_CONSUMED_ALL':
-        case 'EXPECTS_A_CHAR':
-        case 'NOT_A_NUMBER':
             start = fullInput.length - error.input.length
             end = start
             return { ...error, pos: { start, end } }
