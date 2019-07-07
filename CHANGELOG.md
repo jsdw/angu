@@ -1,3 +1,17 @@
+# v0.10.0
+
+## Additions
+
+- Better, faster number parsing.
+- Using `prepareContext` now leads to greater performance improvements, particularly
+  when evaluating many small expressions using a single prepared context verses
+  creating a new one every time.
+
+## Breaking Changes
+
+- Parse errors are now wrapped in a higher level error message to avoid returning
+  often useless implementation details.
+
 # v0.9.0
 
 ## Breaking Changes
