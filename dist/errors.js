@@ -21,6 +21,7 @@ function toOutputError(fullInput, error) {
         case 'EXPECTS_A_SEPARATOR':
         case 'NOT_CONSUMED_ALL':
         case 'EXPECTS_A_CHAR':
+        case 'NOT_A_NUMBER':
             start = fullInput.length - error.input.length;
             end = start;
             return __assign({}, error, { pos: { start: start, end: end } });

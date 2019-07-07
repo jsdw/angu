@@ -33,7 +33,11 @@ export declare type InterpretError = {
 /** Externally facing parse errors */
 export declare type ParseError = LibParseError;
 /** Internal parse errors from libparser */
-export declare type LibParseError = LibParseErrorMatchString | LibParseErrorMustTakeWhile | LibParseErrorMustSepBy | LibParseErrorEndOfString;
+export declare type LibParseError = LibParseErrorMatchString | LibParseErrorMustTakeWhile | LibParseErrorMustSepBy | LibParseErrorEndOfString | LibParseErrorNotANumber;
+export declare type LibParseErrorNotANumber = {
+    kind: 'NOT_A_NUMBER';
+    input: string;
+};
 export declare type LibParseErrorEndOfString = {
     kind: 'EXPECTS_A_CHAR';
     input: "";

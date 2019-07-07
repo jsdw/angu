@@ -1,3 +1,5 @@
+import { expression } from './parser'
+
 /** A context that contains everything required to evaluate an Angu expression */
 export interface ExternalContext {
     /**
@@ -24,6 +26,8 @@ export interface InternalContext {
     ops: string[]
     /** Variables and functions that are in scope during evaluation */
     scope?: { [name: string]: any }
+    /** Cache the parser to avoid rebuilding it each time */
+    expressionParser?: ReturnType<typeof expression>
 }
 
 export type PrecedenceMap = { [op: string]: number }
@@ -77,13 +81,17 @@ export function toInternalContext(ctx: ExternalContext | InternalContext): Inter
         : 0
     })
 
-    return {
+    const internalContext: InternalContext = {
         _internal_: true,
         precedence: precedenceMap,
         associativity: associativityMap,
         ops: validOps,
         scope: scope
     }
+
+    // Cache our parser in the context to avoid rebuilding it each time:
+    internalContext.expressionParser = expression(internalContext)
+    return internalContext
 }
 
 function isInternalContext(ctx: any): ctx is InternalContext {

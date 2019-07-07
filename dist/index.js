@@ -26,7 +26,9 @@ function evaluate(input, context) {
 }
 exports.evaluate = evaluate;
 function doEvaluate(input, internalCtx) {
-    var parsed = parser.expression(internalCtx).parse(input);
+    var parsed = internalCtx.expressionParser
+        ? internalCtx.expressionParser.parse(input)
+        : parser.expression(internalCtx).parse(input);
     if (!result_1.isOk(parsed)) {
         return result_1.mapErr(parsed, function (e) { return errors.toOutputError(input, e); });
     }

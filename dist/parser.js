@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var libparser_1 = require("./libparser");
-var result_1 = require("./result");
-var NUMBER_REGEX = /[0-9]/;
 var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
 var WHITESPACE_REGEX = /\s/;
@@ -36,7 +34,7 @@ function variableExpression() {
 }
 exports.variableExpression = variableExpression;
 function numberExpression() {
-    return number().mapWithPosition(function (n, pos) {
+    return libparser_1.Parser.numberStr().mapWithPosition(function (n, pos) {
         return { kind: 'number', value: Number(n), string: n, pos: pos };
     });
 }
@@ -187,53 +185,6 @@ function parenExpression(opts) {
 }
 exports.parenExpression = parenExpression;
 // Helpful utility parsers:
-function number() {
-    var prefix = libparser_1.Parser.matchString('-')
-        .or(libparser_1.Parser.matchString('+'))
-        .optional();
-    var number = libparser_1.Parser.mustTakeWhile(NUMBER_REGEX);
-    var mantissa = libparser_1.Parser.matchString('.')
-        .andThen(function (_) { return number; });
-    var exponent = libparser_1.Parser.matchString('e', 'E')
-        .andThen(function (_) { return number; })
-        .optional();
-    return libparser_1.Parser.lazy(function () {
-        var nStr = "";
-        return prefix.andThen(function (r) {
-            if (result_1.isOk(r) && r.value === '-') {
-                nStr += r.value; // ignore +
-            }
-            return number.optional();
-        })
-            .andThen(function (r) {
-            if (result_1.isOk(r)) {
-                nStr += r.value;
-                return mantissa.optional();
-            }
-            else {
-                // always have num before '.':
-                nStr += '0';
-                // if no num before, mantissa not optional:
-                return mantissa.map(function (m) { return result_1.ok(m); });
-            }
-        })
-            .andThen(function (r) {
-            if (result_1.isOk(r)) {
-                nStr += "." + r.value;
-            }
-            return exponent;
-        })
-            .map(function (r) {
-            if (result_1.isOk(r)) {
-                return nStr + "e" + r.value;
-            }
-            else {
-                return nStr;
-            }
-        });
-    });
-}
-exports.number = number;
 function string(delim) {
     var escapesAndEnds = libparser_1.Parser.matchString('\\\\', '\\' + delim, delim);
     var restOfString = libparser_1.Parser.takeUntil(escapesAndEnds)

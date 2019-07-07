@@ -11,6 +11,32 @@ var libparser_1 = require("./libparser");
 var result_1 = require("./result");
 var assert = __importStar(require("assert"));
 describe("libparser", function () {
+    it('parses basic numbers properly', function () {
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('1234'), result_1.ok({ output: '1234', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('1234.56'), result_1.ok({ output: '1234.56', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('1.21'), result_1.ok({ output: '1.21', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('-1.22'), result_1.ok({ output: '-1.22', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('+1.23'), result_1.ok({ output: '1.23', rest: '' })); // note output standardisation to remove '+'
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('0.5'), result_1.ok({ output: '0.5', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('0.91'), result_1.ok({ output: '0.91', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('.91'), result_1.ok({ output: '0.91', rest: '' })); // note output standardisation to add leading '0'
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('9e2'), result_1.ok({ output: '9e2', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('9E2'), result_1.ok({ output: '9e2', rest: '' })); // note output standardisation to 'e'
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('.9E2'), result_1.ok({ output: '0.9e2', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('1.9E10'), result_1.ok({ output: '1.9e10', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('1.9E-10'), result_1.ok({ output: '1.9e-10', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('1.9E+10'), result_1.ok({ output: '1.9e10', rest: '' }));
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('9.'), result_1.ok({ output: '9', rest: '.' })); // fails to consume '.' if no numbers after it (could be an operator).
+        assert.deepEqual(libparser_1.Parser.numberStr().parse('9.e2'), result_1.ok({ output: '9', rest: '.e2' })); // can't use '.' then exponent
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('.')));
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('e')));
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('E')));
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('.E2')));
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('-E2')));
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('E2')));
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('-')));
+        assert.ok(result_1.isErr(libparser_1.Parser.numberStr().parse('-.')));
+    });
     it('can match any character', function () {
         assert.deepEqual(libparser_1.Parser.anyChar().parse(''), result_1.err({ kind: 'EXPECTS_A_CHAR', input: '' }));
         assert.deepEqual(libparser_1.Parser.anyChar().parse('a'), result_1.ok({ output: 'a', rest: '' }));

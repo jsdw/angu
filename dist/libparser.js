@@ -36,6 +36,85 @@ var Parser = /** @class */ (function () {
             }
         });
     };
+    /** Parse a number as a string */
+    Parser.numberStr = function () {
+        return new Parser(function (input) {
+            var idx = 0;
+            var nStr = "";
+            // Return this on total failure:
+            function nan() {
+                return result.err({
+                    kind: 'NOT_A_NUMBER',
+                    input: input
+                });
+            }
+            // Prefix:
+            function sign() {
+                if (input[idx] === '+') {
+                    idx++;
+                }
+                else if (input[idx] === '-') {
+                    idx++;
+                    nStr += '-';
+                }
+            }
+            sign();
+            // Leading digits:
+            function pushDigits() {
+                var hasNumbers = false;
+                var charCode = input.charCodeAt(idx);
+                while (charCode >= 48 /* 0 */ && charCode <= 57 /* 9 */) {
+                    nStr += input[idx];
+                    idx++;
+                    hasNumbers = true;
+                    charCode = input.charCodeAt(idx);
+                }
+                return hasNumbers;
+            }
+            var hasLeadingDigits = pushDigits();
+            var hasDecimalPlaces = false;
+            // Decimal place and numbers after it:
+            if (input[idx] === '.') {
+                if (!hasLeadingDigits)
+                    nStr += '0';
+                nStr += '.';
+                idx++;
+                if (!pushDigits()) {
+                    if (!hasLeadingDigits) {
+                        return nan();
+                    }
+                    else {
+                        // failed to push digits, so remove the '.'
+                        // and return the number we've got so far:
+                        return result.ok({
+                            output: nStr.slice(0, -1),
+                            rest: input.slice(idx - 1)
+                        });
+                    }
+                }
+                hasDecimalPlaces = true;
+            }
+            // A number has to have trailing digits or decimal
+            // places, otherwise it's not valid:
+            if (!hasLeadingDigits && !hasDecimalPlaces) {
+                return nan();
+            }
+            // Exponent (e/E followed by optional sign and digits):
+            var e = input[idx];
+            if (e === 'e' || e === 'E') {
+                nStr += 'e';
+                idx++;
+                sign();
+                if (!pushDigits()) {
+                    return nan();
+                }
+            }
+            return result.ok({
+                output: nStr,
+                rest: input.slice(idx)
+            });
+        });
+    };
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
     Parser.lazy = function (fn) {
         return new Parser(function (input) {

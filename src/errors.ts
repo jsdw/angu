@@ -37,18 +37,18 @@ export type EvalErrorThrow = {
     error: any
 }
 export type EvalErrorFunctionNotDefined = {
-    kind: 'FUNCTION_NOT_DEFINED',
+    kind: 'FUNCTION_NOT_DEFINED'
     expr: Expression
 }
 export type EvalErrorNotAFunction = {
-    kind: 'NOT_A_FUNCTION',
-    expr: Expression,
+    kind: 'NOT_A_FUNCTION'
+    expr: Expression
     value: any
 }
 
 /** A misc interpreter error */
 export type InterpretError = {
-    kind: 'NOT_CONSUMED_ALL',
+    kind: 'NOT_CONSUMED_ALL'
     input: string
 }
 
@@ -61,10 +61,16 @@ export type LibParseError
     | LibParseErrorMustTakeWhile
     | LibParseErrorMustSepBy
     | LibParseErrorEndOfString
+    | LibParseErrorNotANumber
 
+
+export type LibParseErrorNotANumber = {
+    kind: 'NOT_A_NUMBER'
+    input: string
+}
 export type LibParseErrorEndOfString = {
-    kind: 'EXPECTS_A_CHAR',
-    input: "",
+    kind: 'EXPECTS_A_CHAR'
+    input: ""
     expects?: string
 }
 export type LibParseErrorMatchString = {
@@ -73,7 +79,7 @@ export type LibParseErrorMatchString = {
     input: string
 }
 export type LibParseErrorMustTakeWhile = {
-    kind: 'EXPECTS_PATTERN',
+    kind: 'EXPECTS_PATTERN'
     expectedPattern: RegExp | String
     input: string
 }
@@ -92,6 +98,7 @@ export function toOutputError(fullInput: string, error: ErrorWithoutPosition): E
         case 'EXPECTS_A_SEPARATOR':
         case 'NOT_CONSUMED_ALL':
         case 'EXPECTS_A_CHAR':
+        case 'NOT_A_NUMBER':
             start = fullInput.length - error.input.length
             end = start
             return { ...error, pos: { start, end } }

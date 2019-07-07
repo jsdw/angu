@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var parser_1 = require("./parser");
 var OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:.-]+$/;
 function toInternalContext(ctx) {
     // Avoid preparing if we don't need to:
@@ -46,13 +47,16 @@ function toInternalContext(ctx) {
             : a.length < b.length ? 1
                 : 0;
     });
-    return {
+    var internalContext = {
         _internal_: true,
         precedence: precedenceMap,
         associativity: associativityMap,
         ops: validOps,
         scope: scope
     };
+    // Cache our parser in the context to avoid rebuilding it each time:
+    internalContext.expressionParser = parser_1.expression(internalContext);
+    return internalContext;
 }
 exports.toInternalContext = toInternalContext;
 function isInternalContext(ctx) {

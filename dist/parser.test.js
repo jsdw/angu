@@ -13,25 +13,6 @@ var context_1 = require("./context");
 var result_1 = require("./result");
 var ID = function (a) { return a; };
 describe('parser', function () {
-    it('parses basic numbers properly', function () {
-        assert.deepEqual(parser.number().parse('1234'), result_1.ok({ output: '1234', rest: '' }));
-        assert.deepEqual(parser.number().parse('1234.56'), result_1.ok({ output: '1234.56', rest: '' }));
-        assert.deepEqual(parser.number().parse('1.21'), result_1.ok({ output: '1.21', rest: '' }));
-        assert.deepEqual(parser.number().parse('-1.22'), result_1.ok({ output: '-1.22', rest: '' }));
-        assert.deepEqual(parser.number().parse('+1.23'), result_1.ok({ output: '1.23', rest: '' })); // note output standardisation to remove '+'
-        assert.deepEqual(parser.number().parse('0.5'), result_1.ok({ output: '0.5', rest: '' }));
-        assert.deepEqual(parser.number().parse('0.91'), result_1.ok({ output: '0.91', rest: '' }));
-        assert.deepEqual(parser.number().parse('.91'), result_1.ok({ output: '0.91', rest: '' })); // note output standardisation to add leading '0'
-        assert.deepEqual(parser.number().parse('9e2'), result_1.ok({ output: '9e2', rest: '' }));
-        assert.deepEqual(parser.number().parse('9E2'), result_1.ok({ output: '9e2', rest: '' })); // note output standardisation to 'e'
-        assert.deepEqual(parser.number().parse('.9E2'), result_1.ok({ output: '0.9e2', rest: '' }));
-        assert.deepEqual(parser.number().parse('1.9E10'), result_1.ok({ output: '1.9e10', rest: '' }));
-        assert.deepEqual(parser.number().parse('9.'), result_1.ok({ output: '9', rest: '.' })); // fails to consume '.' if no numbers after it (could be an operator).
-        assert.deepEqual(parser.number().parse('9.e2'), result_1.ok({ output: '9', rest: '.e2' })); // can't use '.' then exponent
-        assert.ok(result_1.isErr(parser.number().parse('.')));
-        assert.ok(result_1.isErr(parser.number().parse('e')));
-        assert.ok(result_1.isErr(parser.number().parse('E')));
-    });
     it('parses strings with arbitrary delims properly', function () {
         assertParsesStrings('"');
         assertParsesStrings("'");

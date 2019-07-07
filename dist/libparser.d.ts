@@ -21,6 +21,8 @@ export declare class Parser<T, E> {
     static ok<T, E>(val: T): Parser<T, E>;
     /** Any one character. Only fails on an empty string */
     static anyChar(): Parser<string, LibParseError>;
+    /** Parse a number as a string */
+    static numberStr(): Parser<string, LibParseError>;
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
     static lazy<T, E>(fn: () => Parser<T, E>): Parser<T, E>;
     /** Return a parser that matches a given string */

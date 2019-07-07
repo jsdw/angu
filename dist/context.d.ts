@@ -1,3 +1,4 @@
+import { expression } from './parser';
 /** A context that contains everything required to evaluate an Angu expression */
 export interface ExternalContext {
     /**
@@ -30,6 +31,8 @@ export interface InternalContext {
     scope?: {
         [name: string]: any;
     };
+    /** Cache the parser to avoid rebuilding it each time */
+    expressionParser?: ReturnType<typeof expression>;
 }
 export declare type PrecedenceMap = {
     [op: string]: number;

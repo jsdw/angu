@@ -1,10 +1,8 @@
 import { Parser } from './libparser'
 import { Expression } from './expression'
 import { InternalContext } from './context'
-import { isOk, ok } from './result';
 import { ParseError, LibParseError } from './errors'
 
-const NUMBER_REGEX = /[0-9]/
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
 const WHITESPACE_REGEX = /\s/
@@ -45,7 +43,7 @@ export function variableExpression(): InternalParser<Expression> {
 }
 
 export function numberExpression(): InternalParser<Expression> {
-    return number().mapWithPosition((n, pos) => {
+    return Parser.numberStr().mapWithPosition((n, pos) => {
         return { kind: 'number', value: Number(n), string: n, pos }
     })
 }
@@ -198,56 +196,6 @@ export function parenExpression(opts: InternalContext): InternalParser<Expressio
 }
 
 // Helpful utility parsers:
-
-export function number(): InternalParser<string> {
-
-    let prefix = Parser.matchString('-')
-        .or(Parser.matchString('+'))
-        .optional()
-
-    let number = Parser.mustTakeWhile(NUMBER_REGEX)
-
-    let mantissa = Parser.matchString('.')
-        .andThen(_ => number)
-
-    let exponent = Parser.matchString('e', 'E')
-        .andThen(_ => number)
-        .optional()
-
-    return Parser.lazy(() => {
-        let nStr: string = ""
-        return prefix.andThen(r => {
-                if (isOk(r) && r.value === '-') {
-                    nStr += r.value // ignore +
-                }
-                return number.optional()
-            })
-            .andThen(r => {
-                if (isOk(r)) {
-                    nStr += r.value
-                    return mantissa.optional()
-                } else {
-                    // always have num before '.':
-                    nStr += '0'
-                    // if no num before, mantissa not optional:
-                    return mantissa.map(m => ok(m))
-                }
-            })
-            .andThen(r => {
-                if (isOk(r)) {
-                    nStr += "." + r.value
-                }
-                return exponent
-            })
-            .map(r => {
-                if (isOk(r)) {
-                    return nStr + "e" + r.value
-                } else {
-                    return nStr
-                }
-            })
-    })
-}
 
 export function string(delim: string): InternalParser<string> {
     const escapesAndEnds

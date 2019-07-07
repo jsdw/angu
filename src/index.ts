@@ -20,7 +20,9 @@ export function evaluate(input: string, context: Context | PreparedContext): Out
     return toOutputResult(doEvaluate(input, internalCtx))
 }
 function doEvaluate(input: string, internalCtx: InternalContext): Result<any, errors.Error> {
-    const parsed = parser.expression(internalCtx).parse(input)
+    const parsed = internalCtx.expressionParser
+        ? internalCtx.expressionParser.parse(input)
+        : parser.expression(internalCtx).parse(input)
 
     if (!isOk(parsed)) {
         return mapErr(parsed, e => errors.toOutputError(input, e))

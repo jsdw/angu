@@ -46,6 +46,92 @@ export class Parser<T,E> {
         })
     }
 
+    /** Parse a number as a string */
+    static numberStr(): Parser<string,LibParseError> {
+        return new Parser(input => {
+            let idx = 0
+            let nStr = ""
+
+            // Return this on total failure:
+            function nan(): ParseResult<string,LibParseError> {
+                return result.err({
+                    kind: 'NOT_A_NUMBER',
+                    input
+                })
+            }
+
+            // Prefix:
+            function sign () {
+                if (input[idx] === '+') {
+                    idx++
+                } else if (input[idx] === '-') {
+                    idx++
+                    nStr += '-'
+                }
+            }
+            sign()
+
+            // Leading digits:
+            function pushDigits () {
+                let hasNumbers = false
+                let charCode = input.charCodeAt(idx)
+                while (charCode >= 48 /* 0 */ && charCode <= 57 /* 9 */) {
+                    nStr += input[idx]
+                    idx++
+                    hasNumbers = true
+                    charCode = input.charCodeAt(idx)
+                }
+                return hasNumbers
+            }
+
+            const hasLeadingDigits = pushDigits()
+            let hasDecimalPlaces = false
+
+            // Decimal place and numbers after it:
+            if (input[idx] === '.') {
+                if (!hasLeadingDigits) nStr += '0'
+                nStr += '.'
+                idx++
+                if (!pushDigits()) {
+                    if (!hasLeadingDigits) {
+                        return nan()
+                    } else {
+                        // failed to push digits, so remove the '.'
+                        // and return the number we've got so far:
+                        return result.ok({
+                            output: nStr.slice(0, -1),
+                            rest: input.slice(idx - 1)
+                        })
+                    }
+                }
+                hasDecimalPlaces = true
+            }
+
+            // A number has to have trailing digits or decimal
+            // places, otherwise it's not valid:
+            if (!hasLeadingDigits && !hasDecimalPlaces) {
+                return nan()
+            }
+
+            // Exponent (e/E followed by optional sign and digits):
+            let e = input[idx]
+            if (e === 'e' || e === 'E') {
+                nStr += 'e'
+                idx++
+                sign()
+                if (!pushDigits()) {
+                    return nan()
+                }
+            }
+
+            return result.ok({
+                output: nStr,
+                rest: input.slice(idx)
+            })
+
+        })
+    }
+
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
     static lazy<T,E>(fn: () => Parser<T,E>): Parser<T,E> {
         return new Parser(input => {
