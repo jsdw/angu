@@ -47,7 +47,7 @@ npm install angu
 First, you define a `Context` which determines how expressions will be evaluated. For a simple calculator,
 we might define something like the following:
 
-```
+```typescript
 import { evaluate } from 'angu'
 
 const ctx = {
@@ -69,7 +69,7 @@ const ctx = {
 
 Then, you can evaluate expressions in this context:
 
-```
+```typescript
 const r1 = evaluate('2 + 10 * 4', ctx)
 assert.equal(r1.value, 42)
 ```
