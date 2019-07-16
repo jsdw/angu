@@ -5,7 +5,6 @@ import errors from './errors'
 import spreadsheet from './spreadsheet'
 import workingWithVariables from './workingWithVariables'
 
-
 // This file imports all of our examples and tests them, to make sure that
 // they work as expected! Check out the other files in this folder for the
 // actual examples (each of which should be imported above).

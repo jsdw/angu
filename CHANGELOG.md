@@ -1,3 +1,9 @@
+# v0.10.1
+
+## Additions
+
+- Move examples out to their own folder, to make it easier to find the example you want.
+
 # v0.10.0
 
 ## Additions
