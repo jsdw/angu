@@ -9,6 +9,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var angu = __importStar(require("../index"));
+/**
+ * Various information is available to us for each variable that's
+ * given to a function. We can find out things like the value (by
+ * evaluating it) but also the name, kind, and position in the
+ * input string.
+ */
 function workingWithVariables() {
     var ctx = {
         scope: {

@@ -9,6 +9,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var angu = __importStar(require("../index"));
+/**
+ * We can use a prepared `Context` to share state between successive evaluate
+ * calls. This allows us to piece together multiple expressions if we like.
+ *
+ * This also improves performance, as the context needs to be prepared
+ * before it can be used, and so doing it once before all uses is more efficient
+ * than having it done implicitly for every use if it's not been prepared.
+ */
 function prepareContext() {
     var ctx = {
         scope: {

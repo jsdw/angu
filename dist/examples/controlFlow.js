@@ -9,6 +9,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var angu = __importStar(require("../index"));
+/**
+ * This shows that it is possible to implement control flow using
+ * a function (`if`) and only evaluating one argument or the other
+ * depending on the condition (which evaluates to truthy or falsey)
+ */
 function basicControlFlow() {
     var good = false;
     var bad = false;
@@ -42,6 +47,11 @@ function basicControlFlow() {
     assert.equal(bad, false);
 }
 exports.basicControlFlow = basicControlFlow;
+/**
+ * We can also use operators to perform control flow; here we create the
+ * OR operator (`||`), which only evaluates the argument on the right if
+ * the argument on the left was falsey.
+ */
 function shortCircuiting() {
     var good = false;
     var bad = false;

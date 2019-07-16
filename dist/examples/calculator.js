@@ -9,6 +9,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var angu = __importStar(require("../index"));
+/**
+ * A simple calculator with a constant and a few operators available,
+ * taking care to assign the correct precedence to operators so that
+ * they are applied in the right order.
+ */
 function calculator() {
     // Define the functionality and such available to
     // the evaluator:

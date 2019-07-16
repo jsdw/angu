@@ -9,6 +9,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var angu = __importStar(require("../index"));
+/**
+ * We can implement basic Excel-like spreadsheet operations by looking at
+ * token names and using them as cell identifiers.
+ */
 function spreadsheet() {
     // Given some table of information (cols by letter, rows by number):
     var table = [

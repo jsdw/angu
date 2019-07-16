@@ -9,6 +9,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var assert = __importStar(require("assert"));
 var angu = __importStar(require("../index"));
+/**
+ * Build a very simple expression based language with assignment,
+ * semicolon separated expressions and some operators and functions.
+ */
 function basicLanguage() {
     // Put the context behind a function to guarantee that no
     // state is shared between subsequent evaluate calls.
