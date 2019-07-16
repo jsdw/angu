@@ -147,4 +147,4 @@ return the value that that results in. Some other methods are also available:
 
 See the [examples][examples] for more.
 
-[examples]: https://github.com/jsdw/angu/blob/master/src/index.test.ts
+[examples]: https://github.com/jsdw/angu/blob/master/src/examples

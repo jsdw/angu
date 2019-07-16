@@ -6,7 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "bench": "tsc && node dist/*.bench.js",
-    "test": "tsc && mocha 'dist/*.test.js'",
+    "test": "tsc && mocha 'dist/*.test.js' 'dist/examples/index.js'",
     "build": "rm -rf ./dist && tsc"
   },
   "repository": {
