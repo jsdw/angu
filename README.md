@@ -120,7 +120,7 @@ and unary ops side by side), since it knows what it is looking for.
 
 Some valid operator based function calls (assuming the operators are in scope):
 
-```
+```javascript
 1+2/3
 1 + 2
 1 + !2
@@ -128,15 +128,21 @@ Some valid operator based function calls (assuming the operators are in scope):
 
 ## Functions/variables
 
-Functions/variables must start with an ascii character, and can then contain an ascii letter, number or underscore.
+Functions/variables must start with an ascii letter, and can then contain an ascii letter, number or underscore.
 
 If you'd like to use a function as an operator, surround it with backticks. Some valid function calls:
 
-```
+```javascript
 foo()
 foo(bar)
 foo(1,2)
-1 `foo` 2
+```
+
+If the function takes exactly two arguments, and is also listed in the precedence list, it can be used infix
+too, like so:
+
+```
+1 foo 2
 ```
 
 All values passed to functions on scope have the `Value` type. One can call `.eval()` on them to evaluate them and

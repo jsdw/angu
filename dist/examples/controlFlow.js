@@ -63,10 +63,17 @@ function shortCircuiting() {
                 // the right if the left one is truthy:
                 return a.eval() || b.eval();
             },
+            // Just for fun, we can implement the above as a binary string op too:
+            'or': function (a, b) { return a.eval() || b.eval(); },
             // Run these to set our good or bad variable (setGood returns truthy):
             'setGood': function () { good = true; return true; },
             'setBad': function () { bad = true; }
-        }
+        },
+        precedence: [
+            // List the function we want to be able to use as
+            // a binary operator here to make it so:
+            ['or']
+        ]
     };
     // Only setGood should be called, evaluation stops before any `setBad` calls:
     good = false;
@@ -76,7 +83,7 @@ function shortCircuiting() {
     assert.equal(bad, false);
     good = false;
     bad = false;
-    angu.evaluate('false || setGood() || setBad() || setBad()', ctx);
+    angu.evaluate('false or setGood() or setBad() or setBad()', ctx);
     assert.equal(good, true);
     assert.equal(bad, false);
     good = false;

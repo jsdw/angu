@@ -1,3 +1,15 @@
+# v0.11.0
+
+## Additions
+
+- String functions can now be used as infix ops without back ticks if they take exactly
+  two arguments, and are listed in the `precedence` array.
+
+## Breaking Changes
+
+- Back ticks are no longer supported; to use functions infix, ensure that they take
+  exactly two arguments, and add them to the `precedence` array.
+
 # v0.10.3
 
 ## Bug Fixes

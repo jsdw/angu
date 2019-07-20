@@ -4,7 +4,6 @@ var libparser_1 = require("./libparser");
 var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
 var WHITESPACE_REGEX = /\s/;
-var INFIX_TOK_SURROUND = "`";
 /** Parse any expression, consuming surrounding space. This is the primary entry point: */
 function expression(opts) {
     return anyExpression(opts).mapErr(function (e) {
@@ -63,7 +62,7 @@ function booleanExpression() {
 }
 exports.booleanExpression = booleanExpression;
 function unaryOpExpression(opts) {
-    return op(opts.ops).andThen(function (op) {
+    return op(opts.unaryOps).andThen(function (op) {
         return anyExpression(opts).mapWithPosition(function (expr, pos) {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos: pos };
         });
@@ -75,7 +74,7 @@ function binaryOpExpression(opts) {
     var associativity = opts.associativity || {};
     // ops separate the expressions:
     var sep = ignoreWhitespace()
-        .andThen(function (_) { return op(opts.ops); })
+        .andThen(function (_) { return op(opts.binaryOps); })
         .andThen(function (op) {
         return ignoreWhitespace().map(function (_) { return op; });
     });
@@ -221,21 +220,12 @@ function token() {
 exports.token = token;
 function op(opList) {
     return libparser_1.Parser
-        // An op is either a valid op that's been provided on scope, or..
+        // An op is only valid if it's in the provided whitelist:
         .matchString.apply(libparser_1.Parser
-    // An op is either a valid op that's been provided on scope, or..
-    , opList).map(function (s) { return ({ value: s, isOp: true }); })
-        // ..a token that's being used infix:
-        .or(infixFunction());
+    // An op is only valid if it's in the provided whitelist:
+    , opList).map(function (s) { return ({ value: s, isOp: true }); });
 }
 exports.op = op;
-function infixFunction() {
-    return libparser_1.Parser.matchString(INFIX_TOK_SURROUND)
-        .andThen(token)
-        .andThen(function (t) {
-        return libparser_1.Parser.matchString(INFIX_TOK_SURROUND).map(function (_) { return ({ value: t, isOp: false }); });
-    });
-}
 function ignoreWhitespace() {
     return libparser_1.Parser
         .takeWhile(WHITESPACE_REGEX)

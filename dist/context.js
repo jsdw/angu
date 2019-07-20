@@ -30,28 +30,32 @@ function toInternalContext(ctx) {
     // We can then parse  exactly those, rejecting characters that aren't declared.
     // sort them longest first so we match most specific first.
     var scope = ctx.scope || {};
-    var validOps = [];
+    var validUnaryOps = [];
+    var validBinaryOps = [];
     for (var key in scope) {
+        var val = scope[key];
         // The op in scope must be a function:
-        if (typeof scope[key] !== 'function') {
+        if (typeof val !== 'function') {
             continue;
         }
-        // Each character must be a valid op character:
-        if (!OP_REGEX.test(key)) {
-            continue;
+        var isOpChars = OP_REGEX.test(key);
+        var isInPrecedenceMap = key in precedenceMap;
+        var numberOfArgs = val.length;
+        if (numberOfArgs === 2 && (isOpChars || isInPrecedenceMap)) {
+            validBinaryOps.push(key);
         }
-        validOps.push(key);
+        else if (numberOfArgs === 1 && isOpChars) {
+            validUnaryOps.push(key);
+        }
     }
-    validOps.sort(function (a, b) {
-        return a.length > b.length ? -1
-            : a.length < b.length ? 1
-                : 0;
-    });
+    validUnaryOps.sort(sortOps);
+    validBinaryOps.sort(sortOps);
     var internalContext = {
         _internal_: true,
         precedence: precedenceMap,
         associativity: associativityMap,
-        ops: validOps,
+        unaryOps: validUnaryOps,
+        binaryOps: validBinaryOps,
         scope: scope
     };
     // Cache our parser in the context to avoid rebuilding it each time:
@@ -61,4 +65,9 @@ function toInternalContext(ctx) {
 exports.toInternalContext = toInternalContext;
 function isInternalContext(ctx) {
     return ctx._internal_ === true;
+}
+function sortOps(a, b) {
+    return a.length > b.length ? -1
+        : a.length < b.length ? 1
+            : 0;
 }

@@ -20,7 +20,7 @@ export default function jsonFilter () {
                     : undefined
             },
             // Concat results together:
-            ';': (a: Any, b: Any) => {
+            'and': (a: Any, b: Any) => {
                 const aRes = a.eval()
                 const bRes = b.eval()
 
@@ -32,7 +32,7 @@ export default function jsonFilter () {
         },
         precedence: [
             ['.'],
-            [';']
+            ['and']
         ]
     }
 
@@ -60,7 +60,7 @@ export default function jsonFilter () {
         'wibble'
     )
     assert.deepEqual(
-        filterJson({ foo: { bar: [0,1,2], lark: [3,4,5], wibble: 6 } }, 'o.foo.bar; o.foo.lark; o.foo.wibble'),
+        filterJson({ foo: { bar: [0,1,2], lark: [3,4,5], wibble: 6 } }, 'o.foo.bar and o.foo.lark and o.foo.wibble'),
         [0,1,2,3,4,5,6]
     )
 

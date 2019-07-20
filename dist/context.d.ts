@@ -26,8 +26,10 @@ export interface InternalContext {
     precedence: PrecedenceMap;
     /** Is the operator left or right associative? Default left */
     associativity: AssociativityMap;
-    /** A sorted list of valid ops to try parsing */
-    ops: string[];
+    /** A sorted list of valid unary ops to try parsing */
+    unaryOps: string[];
+    /** A sorted list of valid binary ops to try parsing */
+    binaryOps: string[];
     /** Variables and functions that are in scope during evaluation */
     scope?: Scope;
     /** Cache the parser to avoid rebuilding it each time */

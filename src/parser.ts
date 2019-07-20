@@ -6,7 +6,6 @@ import { ParseError } from './errors'
 const TOKEN_START_REGEX = /[a-zA-Z]/
 const TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/
 const WHITESPACE_REGEX = /\s/
-const INFIX_TOK_SURROUND = "`"
 
 // Differentiate between parse errors we expose and those we handle internally.
 type ExternalParser<T> = Parser<T,ParseError>
@@ -72,7 +71,7 @@ export function booleanExpression(): InternalParser<Expression> {
 }
 
 export function unaryOpExpression(opts: InternalContext): InternalParser<Expression> {
-    return op(opts.ops).andThen(op => {
+    return op(opts.unaryOps).andThen(op => {
         return anyExpression(opts).mapWithPosition((expr, pos) => {
             return { kind: 'functioncall', name: op.value, args: [expr], infix: true, pos }
         })
@@ -85,7 +84,7 @@ export function binaryOpExpression(opts: InternalContext): InternalParser<Expres
 
     // ops separate the expressions:
     const sep = ignoreWhitespace()
-        .andThen(_ => op(opts.ops))
+        .andThen(_ => op(opts.binaryOps))
         .andThen(op => {
             return ignoreWhitespace().map(_ => op)
         })
@@ -233,18 +232,8 @@ export function token(): InternalParser<string> {
 type Op = { value: string, isOp: boolean }
 export function op(opList: string[]): InternalParser<Op> {
     return Parser
-        // An op is either a valid op that's been provided on scope, or..
+        // An op is only valid if it's in the provided whitelist:
         .matchString(...opList).map(s => ({ value: s, isOp: true }))
-        // ..a token that's being used infix:
-        .or(infixFunction())
-}
-
-function infixFunction(): InternalParser<Op> {
-    return Parser.matchString(INFIX_TOK_SURROUND)
-        .andThen(token)
-        .andThen(t => {
-            return Parser.matchString(INFIX_TOK_SURROUND).map(_ => ({ value: t, isOp: false }))
-        })
 }
 
 export function ignoreWhitespace(): InternalParser<void> {

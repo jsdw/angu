@@ -24,8 +24,10 @@ export interface InternalContext {
     precedence: PrecedenceMap
     /** Is the operator left or right associative? Default left */
     associativity: AssociativityMap
-    /** A sorted list of valid ops to try parsing */
-    ops: string[]
+    /** A sorted list of valid unary ops to try parsing */
+    unaryOps: string[]
+    /** A sorted list of valid binary ops to try parsing */
+    binaryOps: string[]
     /** Variables and functions that are in scope during evaluation */
     scope?: Scope
     /** Cache the parser to avoid rebuilding it each time */
@@ -65,29 +67,37 @@ export function toInternalContext(ctx: ExternalContext | InternalContext): Inter
     // We can then parse  exactly those, rejecting characters that aren't declared.
     // sort them longest first so we match most specific first.
     const scope = ctx.scope || {}
-    const validOps: string[] = []
+    const validUnaryOps: string[] = []
+    const validBinaryOps: string[] = []
     for (const key in scope) {
+
+        const val = scope[key]
+
         // The op in scope must be a function:
-        if (typeof scope[key] !== 'function') {
+        if (typeof val !== 'function') {
             continue
         }
-        // Each character must be a valid op character:
-        if(!OP_REGEX.test(key)) {
-            continue
+
+        const isOpChars = OP_REGEX.test(key)
+        const isInPrecedenceMap = key in precedenceMap
+        const numberOfArgs = val.length
+
+        if (numberOfArgs === 2 && (isOpChars || isInPrecedenceMap)) {
+            validBinaryOps.push(key)
+        } else if (numberOfArgs === 1 && isOpChars) {
+            validUnaryOps.push(key)
         }
-        validOps.push(key)
     }
-    validOps.sort((a, b) => {
-        return a.length > b.length ? -1
-        : a.length < b.length ? 1
-        : 0
-    })
+
+    validUnaryOps.sort(sortOps)
+    validBinaryOps.sort(sortOps)
 
     const internalContext: InternalContext = {
         _internal_: true,
         precedence: precedenceMap,
         associativity: associativityMap,
-        ops: validOps,
+        unaryOps: validUnaryOps,
+        binaryOps: validBinaryOps,
         scope: scope
     }
 
@@ -98,4 +108,10 @@ export function toInternalContext(ctx: ExternalContext | InternalContext): Inter
 
 function isInternalContext(ctx: any): ctx is InternalContext {
     return ctx._internal_ === true
+}
+
+function sortOps (a: string, b: string): number {
+    return a.length > b.length ? -1
+        : a.length < b.length ? 1
+        : 0
 }

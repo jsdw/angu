@@ -25,7 +25,7 @@ function jsonFilter() {
                     : undefined;
             },
             // Concat results together:
-            ';': function (a, b) {
+            'and': function (a, b) {
                 var aRes = a.eval();
                 var bRes = b.eval();
                 var aArr = Array.isArray(aRes) ? aRes : [aRes];
@@ -35,7 +35,7 @@ function jsonFilter() {
         },
         precedence: [
             ['.'],
-            [';']
+            ['and']
         ]
     };
     // We might expose a method like this:
@@ -48,6 +48,6 @@ function jsonFilter() {
     assert.equal(filterJson({ foo: { bar: 'wibble' } }, 'o.foo.bar.wibble.more'), undefined);
     assert.equal(filterJson({ foo: { bar: [0, 1, 2, { wibble: 'wobble' }] } }, 'o.foo.bar.3.wibble'), 'wobble');
     assert.equal(filterJson({ foo: { '$complex-name': 'wibble' } }, 'o.foo."$complex-name"'), 'wibble');
-    assert.deepEqual(filterJson({ foo: { bar: [0, 1, 2], lark: [3, 4, 5], wibble: 6 } }, 'o.foo.bar; o.foo.lark; o.foo.wibble'), [0, 1, 2, 3, 4, 5, 6]);
+    assert.deepEqual(filterJson({ foo: { bar: [0, 1, 2], lark: [3, 4, 5], wibble: 6 } }, 'o.foo.bar and o.foo.lark and o.foo.wibble'), [0, 1, 2, 3, 4, 5, 6]);
 }
 exports.default = jsonFilter;

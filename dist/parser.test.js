@@ -11,7 +11,6 @@ var assert = __importStar(require("assert"));
 var parser = __importStar(require("./parser"));
 var context_1 = require("./context");
 var result_1 = require("./result");
-var ID = function (a) { return a; };
 describe('parser', function () {
     it('parses strings with arbitrary delims properly', function () {
         assertParsesStrings('"');
@@ -63,25 +62,13 @@ describe('parser', function () {
         assertRoughlyEqual(parser.expression(opts).eval('( foo )'), result_1.ok({ kind: 'variable', name: 'foo' }));
         assertRoughlyEqual(parser.expression(opts).eval('(1.2 )'), result_1.ok({ kind: 'number', value: 1.2, string: '1.2' }));
     });
-    it('parses functions as operators by surrounding with `', function () {
-        var opts = context_1.toInternalContext({});
-        assertRoughlyEqual(parser.expression(opts).parse("1 `foo` 2"), result_1.ok({
-            output: {
-                kind: 'functioncall',
-                name: 'foo',
-                infix: true,
-                args: [
-                    { kind: 'number', value: 1, string: '1' },
-                    { kind: 'number', value: 2, string: '2' }
-                ]
-            },
-            rest: ''
-        }));
-    });
     it('parses unary ops', function () {
         var opts = context_1.toInternalContext({
             // The ops we want to use have to exist on scope:
-            scope: { '!': ID, '+': ID }
+            scope: {
+                '!': function (_a) { return null; },
+                '+': function (_a, _b) { return null; }
+            }
         });
         assertRoughlyEqual(parser.expression(opts).eval('!foo'), result_1.ok({
             kind: 'functioncall',
@@ -114,6 +101,26 @@ describe('parser', function () {
                     args: [{ kind: 'number', value: -1, string: '-1' }]
                 }
             ]
+        }));
+    });
+    it('wont parse unary string ops', function () {
+        var opts = context_1.toInternalContext({
+            // The ops we want to use have to exist on scope:
+            scope: {
+                'no': function (_a) { return null; },
+            },
+            precedence: [
+                // A func with precedence and the right number
+                // of args can be used as a binary op. This should
+                // not be used as a unary op though:
+                ['no']
+            ]
+        });
+        // This should be a variable, 'no1'. not a unary op 'no' applied
+        // to the number 1:
+        assertRoughlyEqual(parser.expression(opts).eval('no1'), result_1.ok({
+            kind: 'variable',
+            name: 'no1',
         }));
     });
     it('parses function calls', function () {
@@ -153,7 +160,7 @@ describe('parser', function () {
     });
     it('parses the `.` binary op OK despite it being used in numbers', function () {
         var opts = context_1.toInternalContext({
-            scope: { '.': ID },
+            scope: { '.': function (_a, _b) { return null; } },
         });
         assertRoughlyEqual(parser.expression(opts).eval('3.2 . 3'), result_1.ok({
             kind: 'functioncall',
@@ -185,7 +192,11 @@ describe('parser', function () {
     });
     it('parses binary ops taking precedence into account', function () {
         var opts = context_1.toInternalContext({
-            scope: { '^': ID, '+': ID, '*': ID },
+            scope: {
+                '^': function (_a, _b) { return null; },
+                '+': function (_a, _b) { return null; },
+                '*': function (_a, _b) { return null; }
+            },
             precedence: [['^'], ['*'], ['+']]
         });
         assertRoughlyEqual(parser.expression(opts).eval('3 ^ 4 * 5 + 6'), result_1.ok({
@@ -241,11 +252,15 @@ describe('parser', function () {
     });
     it('always puts function ops first if no precedence given for them', function () {
         var opts = context_1.toInternalContext({
-            scope: { '*': ID },
-            precedence: [['*'], ['bar']]
+            scope: {
+                '*': function (_a, _b) { return null; },
+                foo: function (_a, _b) { return null; },
+                bar: function (_a, _b) { return null; },
+            },
+            precedence: [['foo'], ['*'], ['bar']]
         });
         // foo is evaluated first:
-        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `foo` 2 * 4"), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 foo 2 * 4"), result_1.ok({
             kind: 'functioncall',
             name: '*',
             infix: true,
@@ -271,7 +286,7 @@ describe('parser', function () {
             ]
         }));
         // bar is evaluated last (it is listed last in precedence):
-        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 `bar` 2 * 4"), result_1.ok({
+        assertRoughlyEqual(parser.expression(opts).eval("5 * 3 bar 2 * 4"), result_1.ok({
             kind: 'functioncall',
             name: 'bar',
             infix: true,
