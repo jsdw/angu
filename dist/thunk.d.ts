@@ -1,6 +1,6 @@
 import { Expression } from './expression';
-import { InternalContext } from './context';
-export declare function create(expr: Expression, context: InternalContext, inputLength: number): Value;
+import { InternalContext, Scope } from './context';
+export declare function create(expr: Expression, context: InternalContext, inputLength: number, locals?: Scope): Value;
 export declare class Value<T = any> {
     readonly inputLength: number;
     readonly expr: Expression;

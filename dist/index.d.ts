@@ -1,6 +1,6 @@
 import * as errors from './errors';
 import { OutputResult } from './result';
-import { ExternalContext } from './context';
+import { ExternalContext, Scope } from './context';
 export { Value } from './thunk';
 export declare type Context = ExternalContext;
 /**
@@ -8,7 +8,7 @@ export declare type Context = ExternalContext;
  * to evaluate the expression against, return the result of
  * this evaluation or throw an error if something goes wrong.
  */
-export declare function evaluate(input: string, context: Context | PreparedContext): OutputResult<any, errors.Error>;
+export declare function evaluate(input: string, context: Context | PreparedContext, locals?: Scope): OutputResult<any, errors.Error>;
 /**
  * Prepare a context to be used in an `evaluate` call. This allows you to
  * reuse a context across evaluations to avoid needing to prepare a new

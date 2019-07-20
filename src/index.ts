@@ -2,7 +2,7 @@ import * as thunk from './thunk'
 import * as parser from './parser'
 import * as errors from './errors'
 import { isOk, Result, err, ok, mapErr, toOutputResult, OutputResult } from './result';
-import { ExternalContext, InternalContext, toInternalContext } from './context'
+import { ExternalContext, InternalContext, toInternalContext, Scope } from './context'
 
 // Re-export the Value type, since it's handed to functions in scope:
 export { Value } from './thunk'
@@ -15,11 +15,11 @@ export type Context = ExternalContext
  * to evaluate the expression against, return the result of
  * this evaluation or throw an error if something goes wrong.
  */
-export function evaluate(input: string, context: Context | PreparedContext): OutputResult<any, errors.Error> {
+export function evaluate(input: string, context: Context | PreparedContext, locals?: Scope): OutputResult<any, errors.Error> {
     const internalCtx = toInternalContext(context)
-    return toOutputResult(doEvaluate(input, internalCtx))
+    return toOutputResult(doEvaluate(input, internalCtx, locals))
 }
-function doEvaluate(input: string, internalCtx: InternalContext): Result<any, errors.Error> {
+function doEvaluate(input: string, internalCtx: InternalContext, locals?: Scope): Result<any, errors.Error> {
     const parsed = internalCtx.expressionParser
         ? internalCtx.expressionParser.parse(input)
         : parser.expression(internalCtx).parse(input)
@@ -34,7 +34,7 @@ function doEvaluate(input: string, internalCtx: InternalContext): Result<any, er
     }
 
     try {
-        const value = thunk.create(parsed.value.output, internalCtx, input.length)
+        const value = thunk.create(parsed.value.output, internalCtx, input.length, locals)
         return ok(value.eval())
     } catch(e) {
         return err(e)

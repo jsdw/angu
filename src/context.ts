@@ -12,8 +12,10 @@ export interface ExternalContext {
      */
     precedence?: ({ ops: string[], associativity?: 'right' | 'left' } | string[])[]
     /** Variables and functions that are in scope during evaluation */
-    scope?: { [name: string]: any }
+    scope?: Scope
 }
+
+export type Scope = { [name: string]: any }
 
 export interface InternalContext {
     /** This is used internally only */
@@ -25,7 +27,7 @@ export interface InternalContext {
     /** A sorted list of valid ops to try parsing */
     ops: string[]
     /** Variables and functions that are in scope during evaluation */
-    scope?: { [name: string]: any }
+    scope?: Scope
     /** Cache the parser to avoid rebuilding it each time */
     expressionParser?: ReturnType<typeof expression>
 }

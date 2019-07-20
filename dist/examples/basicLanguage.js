@@ -66,12 +66,17 @@ function basicLanguage() {
         ]
     }); };
     assert.equal(angu.evaluate('"hello " + "world"', ctx()).value, "hello world");
+    // We can pass in local variables at eval time:
+    assert.equal(angu.evaluate('"hello " + w', ctx(), { w: 'world' }).value, "hello world");
     assert.equal(angu.evaluate('"hello" * 4', ctx()).value, "hellohellohellohello");
     assert.equal(angu.evaluate('1 + 2 + 3', ctx()).value, 6);
     assert.equal(angu.evaluate('1 + 2 + 3 / 3', ctx()).value, 4);
     assert.equal(angu.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8);
-    assert.equal(angu.evaluate('pow(1 + 2 +  3/3, 2) / 2', ctx()).value, 8);
-    assert.equal(angu.evaluate("(1 + 2 +  3/3) `pow` 2 / 2", ctx()).value, 8);
+    // We can pass in local functions at eval time, which override those in scope:
+    assert.equal(angu.evaluate('pow(1 + 2, 2)', ctx(), { pow: function (a, b) { return a.eval() + b.eval(); } }).value, 5);
+    // Functions can be used inline using back ticks:
+    assert.equal(angu.evaluate("2 `pow` 3", ctx()).value, 8);
+    assert.equal(angu.evaluate("2 `pow` 3", ctx(), { pow: function (a, b) { return a.eval() + b.eval(); } }).value, 5);
     assert.equal(angu.evaluate(' log10(100)  +2 -2', ctx()).value, 2);
     assert.equal(angu.evaluate('foo = 8; foo = 10; bar = 2; foo * bar', ctx()).value, 20);
     // We'll use this example in the README:

@@ -14,10 +14,11 @@ export interface ExternalContext {
         associativity?: 'right' | 'left';
     } | string[])[];
     /** Variables and functions that are in scope during evaluation */
-    scope?: {
-        [name: string]: any;
-    };
+    scope?: Scope;
 }
+export declare type Scope = {
+    [name: string]: any;
+};
 export interface InternalContext {
     /** This is used internally only */
     _internal_: true;
@@ -28,9 +29,7 @@ export interface InternalContext {
     /** A sorted list of valid ops to try parsing */
     ops: string[];
     /** Variables and functions that are in scope during evaluation */
-    scope?: {
-        [name: string]: any;
-    };
+    scope?: Scope;
     /** Cache the parser to avoid rebuilding it each time */
     expressionParser?: ReturnType<typeof expression>;
 }

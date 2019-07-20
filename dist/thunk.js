@@ -1,20 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function create(expr, context, inputLength) {
+function create(expr, context, inputLength, locals) {
     switch (expr.kind) {
-        case 'variable': return thunkVariable(expr, context, inputLength);
+        case 'variable': return thunkVariable(expr, context, inputLength, locals);
         case 'number': return thunkNumber(expr, context, inputLength);
         case 'bool': return thunkBool(expr, context, inputLength);
-        case 'functioncall': return thunkFunctioncall(expr, context, inputLength);
+        case 'functioncall': return thunkFunctioncall(expr, context, inputLength, locals);
         case 'string': return thunkString(expr, context, inputLength);
     }
 }
 exports.create = create;
-function thunkVariable(expr, context, inputLength) {
-    // If the variable doesn't exist, return its name. Assuming assignment
-    // isn't implemented, this allows for primitive tokens.
+function thunkVariable(expr, context, inputLength, locals) {
     return new Value(inputLength, expr, function () {
-        return (context.scope || EMPTY)[expr.name];
+        // Search locals first for the variable,
+        // falling back to context.scope if no local:
+        return locals && expr.name in locals
+            ? locals[expr.name]
+            : (context.scope || EMPTY)[expr.name];
     });
 }
 function thunkNumber(expr, _context, inputLength) {
@@ -26,12 +28,14 @@ function thunkBool(expr, _context, inputLength) {
 function thunkString(expr, _context, inputLength) {
     return new Value(inputLength, expr, function () { return expr.value; });
 }
-function thunkFunctioncall(expr, context, inputLength) {
+function thunkFunctioncall(expr, context, inputLength, locals) {
     return new Value(inputLength, expr, function () {
-        var fn = (context.scope || EMPTY)[expr.name];
+        var fn = locals && expr.name in locals
+            ? locals[expr.name]
+            : (context.scope || EMPTY)[expr.name];
         if (typeof fn === 'function') {
             try {
-                return fn.apply({ context: context }, expr.args.map(function (arg) { return create(arg, context, inputLength); }));
+                return fn.apply({ context: context }, expr.args.map(function (arg) { return create(arg, context, inputLength, locals); }));
             }
             catch (e) {
                 var err = {

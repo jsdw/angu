@@ -20,12 +20,12 @@ exports.Value = thunk_1.Value;
  * to evaluate the expression against, return the result of
  * this evaluation or throw an error if something goes wrong.
  */
-function evaluate(input, context) {
+function evaluate(input, context, locals) {
     var internalCtx = context_1.toInternalContext(context);
-    return result_1.toOutputResult(doEvaluate(input, internalCtx));
+    return result_1.toOutputResult(doEvaluate(input, internalCtx, locals));
 }
 exports.evaluate = evaluate;
-function doEvaluate(input, internalCtx) {
+function doEvaluate(input, internalCtx, locals) {
     var parsed = internalCtx.expressionParser
         ? internalCtx.expressionParser.parse(input)
         : parser.expression(internalCtx).parse(input);
@@ -37,7 +37,7 @@ function doEvaluate(input, internalCtx) {
         return result_1.err(errors.toOutputError(input, e));
     }
     try {
-        var value = thunk.create(parsed.value.output, internalCtx, input.length);
+        var value = thunk.create(parsed.value.output, internalCtx, input.length, locals);
         return result_1.ok(value.eval());
     }
     catch (e) {

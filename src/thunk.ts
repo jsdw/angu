@@ -1,22 +1,24 @@
 import { Expression, ExprVariable, ExprNumber, ExprBool, ExprFunctioncall, ExprString } from './expression'
-import { InternalContext } from './context'
+import { InternalContext, Scope } from './context'
 import { EvalError } from './errors'
 
-export function create(expr: Expression, context: InternalContext, inputLength: number): Value {
+export function create(expr: Expression, context: InternalContext, inputLength: number, locals?: Scope): Value {
     switch(expr.kind) {
-        case 'variable': return thunkVariable(expr, context, inputLength)
+        case 'variable': return thunkVariable(expr, context, inputLength, locals)
         case 'number': return thunkNumber(expr, context, inputLength)
         case 'bool': return thunkBool(expr, context, inputLength)
-        case 'functioncall': return thunkFunctioncall(expr, context, inputLength)
+        case 'functioncall': return thunkFunctioncall(expr, context, inputLength, locals)
         case 'string': return thunkString(expr, context, inputLength)
     }
 }
 
-function thunkVariable(expr: ExprVariable, context: InternalContext, inputLength: number): Value {
-    // If the variable doesn't exist, return its name. Assuming assignment
-    // isn't implemented, this allows for primitive tokens.
+function thunkVariable(expr: ExprVariable, context: InternalContext, inputLength: number, locals?: Scope): Value {
     return new Value(inputLength, expr, () => {
-        return (context.scope || EMPTY)[expr.name]
+        // Search locals first for the variable,
+        // falling back to context.scope if no local:
+        return locals && expr.name in locals
+            ? locals[expr.name]
+            : (context.scope || EMPTY)[expr.name]
     })
 }
 
@@ -32,12 +34,16 @@ function thunkString(expr: ExprString, _context: InternalContext, inputLength: n
     return new Value(inputLength, expr, () => expr.value)
 }
 
-function thunkFunctioncall(expr: ExprFunctioncall, context: InternalContext, inputLength: number): Value {
+function thunkFunctioncall(expr: ExprFunctioncall, context: InternalContext, inputLength: number, locals?: Scope): Value {
     return new Value(inputLength, expr, () => {
-        const fn = (context.scope || EMPTY)[expr.name]
+
+        const fn = locals && expr.name in locals
+            ? locals[expr.name]
+            : (context.scope || EMPTY)[expr.name]
+
         if (typeof fn === 'function') {
             try {
-                return fn.apply({ context }, expr.args.map(arg => create(arg, context, inputLength)))
+                return fn.apply({ context }, expr.args.map(arg => create(arg, context, inputLength, locals)))
             } catch (e) {
                 const err: EvalError = {
                     kind: 'EVAL_THROW',
