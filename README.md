@@ -130,7 +130,7 @@ Some valid operator based function calls (assuming the operators are in scope):
 
 Functions/variables must start with an ascii letter, and can then contain an ascii letter, number or underscore.
 
-If you'd like to use a function as an operator, surround it with backticks. Some valid function calls:
+Some valid function calls:
 
 ```javascript
 foo()
