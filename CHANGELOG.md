@@ -1,3 +1,10 @@
+# v0.10.2
+
+## Additions
+
+- Allow local variables to be provided to eval calls
+- Add example of a language for pulling values from from objects/JSON
+
 # v0.10.1
 
 ## Additions

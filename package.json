@@ -1,6 +1,6 @@
 {
   "name": "angu",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "A small interpreter for creating DSLs",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

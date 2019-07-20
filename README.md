@@ -74,6 +74,13 @@ const r1 = evaluate('2 + 10 * 4', ctx)
 assert.equal(r1.value, 42)
 ```
 
+We can also provide locals at eval time:
+
+```typescript
+const r1 = evaluate('2 + 10 * four', ctx, { four: 4 })
+assert.equal(r1.value, 42)
+```
+
 If something goes wrong evaluating the provided string, an error will be returned. All errors returned
 contain position information (`{ pos: { start, end}, ... }`) describing the beginning and end of the
 string that contains the error. Specific errors contain other information depending on their `kind`.
