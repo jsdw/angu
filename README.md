@@ -4,7 +4,7 @@ A small library that can be used to implement and safely evaluate DSLs (Domain S
 in the browser or in NodeJS. You have complete control over every operation performed, and this library
 takes care of the nitty gritty of the parsing and such.
 
-Zero dependencies, and comes with typescript typings (usage optional).
+Zero dependencies, and comes with javascript typings (usage optional).
 
 We can use this to create a simple in-browser calculator to evaluate things like:
 
@@ -47,7 +47,7 @@ npm install angu
 First, you define a `Context` which determines how expressions will be evaluated. For a simple calculator,
 we might define something like the following:
 
-```typescript
+```javascript
 import { evaluate } from 'angu'
 
 const ctx = {
@@ -69,14 +69,14 @@ const ctx = {
 
 Then, you can evaluate expressions in this context:
 
-```typescript
+```javascript
 const r1 = evaluate('2 + 10 * 4', ctx)
 assert.equal(r1.value, 42)
 ```
 
 We can also provide locals at eval time:
 
-```typescript
+```javascript
 const r1 = evaluate('2 + 10 * four', ctx, { four: 4 })
 assert.equal(r1.value, 42)
 ```
@@ -139,19 +139,15 @@ foo(1,2)
 1 `foo` 2
 ```
 
-If the variable you ask for is not found in the `scope` object, the evaluator will return the string name of the
-variable to the function/operator that's using it. This allows us to treat variables as basic string tokens when
-there is no other sensible way of treating them.
-
 All values passed to functions on scope have the `Value` type. One can call `.eval()` on them to evaluate them and
 return the value that that results in. Some other methods are also available:
 
-- `Value.kind()`: Return the kind of the Value ("string" | "number" | "variable" | "bool" | "functioncall").
-- `Value.pos()`: Return the start and end index of the original input string that represent this Value.
+- `Value.kind()`: Return the kind of the Value (`"string" | "number" | "variable" | "bool" | "functioncall"`).
+- `Value.pos()`: Return the start and end index of the original input string that this Value was parsed from.
 - `Value.toString()`: (or `String(Value)`) gives back a string representation of the value, useful for debugging.
 - `Value.name()`: Gives back the "name" of the value. This is the function/variable name if applicable, else
   true/false for bools, the string contents for strings, or the numeric representation for numbers.
 
-See the [examples][examples] for more.
+See the [examples][examples] for more, particularly `workingWithVariables.ts`.
 
 [examples]: https://github.com/jsdw/angu/blob/master/src/examples

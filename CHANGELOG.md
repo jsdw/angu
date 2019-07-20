@@ -1,3 +1,9 @@
+# v0.10.3
+
+## Bug Fixes
+
+- Fix a little now-incorrect information in the README
+
 # v0.10.2
 
 ## Additions
