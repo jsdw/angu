@@ -7,13 +7,14 @@ var basicLanguage_1 = __importDefault(require("./basicLanguage"));
 var calculator_1 = __importDefault(require("./calculator"));
 var controlFlow_1 = require("./controlFlow");
 var errors_1 = __importDefault(require("./errors"));
+var jsonFilter_1 = __importDefault(require("./jsonFilter"));
 var spreadsheet_1 = __importDefault(require("./spreadsheet"));
 var workingWithVariables_1 = __importDefault(require("./workingWithVariables"));
 // This file imports all of our examples and tests them, to make sure that
 // they work as expected! Check out the other files in this folder for the
 // actual examples (each of which should be imported above).
 describe('examples', function () {
-    test(basicLanguage_1.default, calculator_1.default, controlFlow_1.basicControlFlow, controlFlow_1.shortCircuiting, errors_1.default, spreadsheet_1.default, workingWithVariables_1.default);
+    test(basicLanguage_1.default, calculator_1.default, controlFlow_1.basicControlFlow, controlFlow_1.shortCircuiting, errors_1.default, jsonFilter_1.default, spreadsheet_1.default, workingWithVariables_1.default);
 });
 function test() {
     var fns = [];

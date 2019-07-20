@@ -2,6 +2,7 @@ import basicLanguage from './basicLanguage'
 import calculator from './calculator'
 import { basicControlFlow, shortCircuiting } from './controlFlow'
 import errors from './errors'
+import jsonFilter from './jsonFilter'
 import spreadsheet from './spreadsheet'
 import workingWithVariables from './workingWithVariables'
 
@@ -16,6 +17,7 @@ describe('examples', function () {
         basicControlFlow,
         shortCircuiting,
         errors,
+        jsonFilter,
         spreadsheet,
         workingWithVariables
     )
