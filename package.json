@@ -30,7 +30,7 @@
     "@types/mocha": "^5.2.7",
     "assert": "^2.0.0",
     "benchmark": "^2.1.4",
-    "mocha": "^6.1.4",
-    "typescript": "^3.5.1"
+    "mocha": "^6.2.0",
+    "typescript": "^3.5.3"
   }
 }
