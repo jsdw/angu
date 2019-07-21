@@ -72,11 +72,20 @@ exports.unaryOpExpression = unaryOpExpression;
 function binaryOpExpression(opts) {
     var precedence = opts.precedence || {};
     var associativity = opts.associativity || {};
+    // Depending on whether we saw a space between op and first expression,
+    // we can finish parsing the separator using one or both of these:
+    var restOfNormalBinaryOp = op(opts.binaryOps).andThen(function (op) {
+        return ignoreWhitespace().map(function (_) { return op; });
+    });
+    var restOfStringBinaryOp = op(opts.binaryStringOps).andThen(function (op) {
+        return mustIgnoreWhitespace().map(function (_) { return op; });
+    });
     // ops separate the expressions:
     var sep = ignoreWhitespace()
-        .andThen(function (_) { return op(opts.binaryOps); })
-        .andThen(function (op) {
-        return ignoreWhitespace().map(function (_) { return op; });
+        .andThen(function (wasSpace) {
+        return wasSpace
+            ? restOfNormalBinaryOp.or(restOfStringBinaryOp)
+            : restOfNormalBinaryOp;
     });
     // given array of ops, return index of highest precedence:
     function highestPrecIdx(ops) {
@@ -225,10 +234,13 @@ function op(opList) {
     // An op is only valid if it's in the provided whitelist:
     , opList).map(function (s) { return ({ value: s, isOp: true }); });
 }
-exports.op = op;
 function ignoreWhitespace() {
     return libparser_1.Parser
         .takeWhile(WHITESPACE_REGEX)
+        .map(function (s) { return !!s.length; });
+}
+function mustIgnoreWhitespace() {
+    return libparser_1.Parser
+        .mustTakeWhile(WHITESPACE_REGEX)
         .map(function (_) { return undefined; });
 }
-exports.ignoreWhitespace = ignoreWhitespace;

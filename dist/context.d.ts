@@ -30,6 +30,8 @@ export interface InternalContext {
     unaryOps: string[];
     /** A sorted list of valid binary ops to try parsing */
     binaryOps: string[];
+    /** A sorted list of valid binary string ops */
+    binaryStringOps: string[];
     /** Variables and functions that are in scope during evaluation */
     scope?: Scope;
     /** Cache the parser to avoid rebuilding it each time */

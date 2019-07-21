@@ -32,6 +32,7 @@ function toInternalContext(ctx) {
     var scope = ctx.scope || {};
     var validUnaryOps = [];
     var validBinaryOps = [];
+    var validBinaryStringOps = [];
     for (var key in scope) {
         var val = scope[key];
         // The op in scope must be a function:
@@ -41,8 +42,13 @@ function toInternalContext(ctx) {
         var isOpChars = OP_REGEX.test(key);
         var isInPrecedenceMap = key in precedenceMap;
         var numberOfArgs = val.length;
-        if (numberOfArgs === 2 && (isOpChars || isInPrecedenceMap)) {
-            validBinaryOps.push(key);
+        if (numberOfArgs === 2) {
+            // Is a standard operator:
+            if (isOpChars)
+                validBinaryOps.push(key);
+            // Is a string operator (no op chars but explicit precedence):
+            else if (isInPrecedenceMap)
+                validBinaryStringOps.push(key);
         }
         else if (numberOfArgs === 1 && isOpChars) {
             validUnaryOps.push(key);
@@ -50,12 +56,14 @@ function toInternalContext(ctx) {
     }
     validUnaryOps.sort(sortOps);
     validBinaryOps.sort(sortOps);
+    validBinaryStringOps.sort(sortOps);
     var internalContext = {
         _internal_: true,
         precedence: precedenceMap,
         associativity: associativityMap,
         unaryOps: validUnaryOps,
         binaryOps: validBinaryOps,
+        binaryStringOps: validBinaryStringOps,
         scope: scope
     };
     // Cache our parser in the context to avoid rebuilding it each time:

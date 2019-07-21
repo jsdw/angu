@@ -28,6 +28,8 @@ export interface InternalContext {
     unaryOps: string[]
     /** A sorted list of valid binary ops to try parsing */
     binaryOps: string[]
+    /** A sorted list of valid binary string ops */
+    binaryStringOps: string[]
     /** Variables and functions that are in scope during evaluation */
     scope?: Scope
     /** Cache the parser to avoid rebuilding it each time */
@@ -69,6 +71,7 @@ export function toInternalContext(ctx: ExternalContext | InternalContext): Inter
     const scope = ctx.scope || {}
     const validUnaryOps: string[] = []
     const validBinaryOps: string[] = []
+    const validBinaryStringOps: string[] = []
     for (const key in scope) {
 
         const val = scope[key]
@@ -82,8 +85,11 @@ export function toInternalContext(ctx: ExternalContext | InternalContext): Inter
         const isInPrecedenceMap = key in precedenceMap
         const numberOfArgs = val.length
 
-        if (numberOfArgs === 2 && (isOpChars || isInPrecedenceMap)) {
-            validBinaryOps.push(key)
+        if (numberOfArgs === 2) {
+            // Is a standard operator:
+            if (isOpChars) validBinaryOps.push(key)
+            // Is a string operator (no op chars but explicit precedence):
+            else if (isInPrecedenceMap) validBinaryStringOps.push(key)
         } else if (numberOfArgs === 1 && isOpChars) {
             validUnaryOps.push(key)
         }
@@ -91,6 +97,7 @@ export function toInternalContext(ctx: ExternalContext | InternalContext): Inter
 
     validUnaryOps.sort(sortOps)
     validBinaryOps.sort(sortOps)
+    validBinaryStringOps.sort(sortOps)
 
     const internalContext: InternalContext = {
         _internal_: true,
@@ -98,6 +105,7 @@ export function toInternalContext(ctx: ExternalContext | InternalContext): Inter
         associativity: associativityMap,
         unaryOps: validUnaryOps,
         binaryOps: validBinaryOps,
+        binaryStringOps: validBinaryStringOps,
         scope: scope
     }
 

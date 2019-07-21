@@ -67,6 +67,7 @@ describe('parser', function () {
             // The ops we want to use have to exist on scope:
             scope: {
                 '!': function (_a) { return null; },
+                '~': function (_a) { return null; },
                 '+': function (_a, _b) { return null; }
             }
         });
@@ -83,6 +84,35 @@ describe('parser', function () {
             name: '!',
             infix: true,
             args: [{ kind: 'number', value: -1, string: '-1' }]
+        }));
+        // This is a bit hideous but should parse properly since we know what
+        // the binary and unary ops here are:
+        assertRoughlyEqual(parser.expression(opts).eval('2+!~-1)'), result_1.ok({
+            kind: 'functioncall',
+            name: '+',
+            infix: true,
+            args: [
+                {
+                    kind: 'number',
+                    value: 2,
+                    string: '2'
+                },
+                {
+                    kind: 'functioncall',
+                    name: '!',
+                    infix: true,
+                    args: [{
+                            kind: 'functioncall',
+                            name: '~',
+                            infix: true,
+                            args: [{
+                                    kind: 'number',
+                                    value: -1,
+                                    string: '-1'
+                                }]
+                        }]
+                }
+            ]
         }));
         assertRoughlyEqual(parser.expression(opts).eval('2 + !-1'), result_1.ok({
             kind: 'functioncall',
@@ -121,6 +151,42 @@ describe('parser', function () {
         assertRoughlyEqual(parser.expression(opts).eval('no1'), result_1.ok({
             kind: 'variable',
             name: 'no1',
+        }));
+    });
+    it('wont parse binary string ops without spaces', function () {
+        var opts = context_1.toInternalContext({
+            scope: {
+                'or': function (_a, _b) { return null; },
+            },
+            precedence: [
+                ['or']
+            ]
+        });
+        // Should fail to parse 'or' due to no spaces:
+        assertRoughlyEqual(parser.expression(opts).parse('1or2'), result_1.ok({
+            output: { kind: 'number', string: '1', value: 1 },
+            rest: 'or2'
+        }));
+        assertRoughlyEqual(parser.expression(opts).parse('1 or2'), result_1.ok({
+            output: { kind: 'number', string: '1', value: 1 },
+            rest: 'or2'
+        }));
+        assertRoughlyEqual(parser.expression(opts).parse('1or 2'), result_1.ok({
+            output: { kind: 'number', string: '1', value: 1 },
+            rest: 'or 2'
+        }));
+        // For confirmation, this should be fine:
+        assertRoughlyEqual(parser.expression(opts).parse('1 or 2'), result_1.ok({
+            output: {
+                kind: 'functioncall',
+                name: 'or',
+                infix: true,
+                args: [
+                    { kind: 'number', string: '1', value: 1 },
+                    { kind: 'number', string: '2', value: 2 }
+                ]
+            },
+            rest: ''
         }));
     });
     it('parses function calls', function () {

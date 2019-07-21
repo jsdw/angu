@@ -1,3 +1,11 @@
+# v0.11.1
+
+## Breaking Changes
+
+- Spaces are now required between infix string ops (eg `or`) and their arguments, but
+  are still not required with normal infix ops (eg `+`). This avoids potential
+  ambiguity, and should line up with what is expected to have worked anyway.
+
 # v0.11.0
 
 ## Additions

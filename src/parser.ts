@@ -82,11 +82,21 @@ export function binaryOpExpression(opts: InternalContext): InternalParser<Expres
     const precedence = opts.precedence || {}
     const associativity = opts.associativity || {}
 
+    // Depending on whether we saw a space between op and first expression,
+    // we can finish parsing the separator using one or both of these:
+    const restOfNormalBinaryOp = op(opts.binaryOps).andThen(op => {
+        return ignoreWhitespace().map(_ => op)
+    })
+    const restOfStringBinaryOp = op(opts.binaryStringOps).andThen(op => {
+        return mustIgnoreWhitespace().map(_ => op)
+    })
+
     // ops separate the expressions:
     const sep = ignoreWhitespace()
-        .andThen(_ => op(opts.binaryOps))
-        .andThen(op => {
-            return ignoreWhitespace().map(_ => op)
+        .andThen(wasSpace => {
+            return wasSpace
+                ? restOfNormalBinaryOp.or(restOfStringBinaryOp)
+                : restOfNormalBinaryOp
         })
 
     // given array of ops, return index of highest precedence:
@@ -230,14 +240,20 @@ export function token(): InternalParser<string> {
 }
 
 type Op = { value: string, isOp: boolean }
-export function op(opList: string[]): InternalParser<Op> {
+function op(opList: string[]): InternalParser<Op> {
     return Parser
         // An op is only valid if it's in the provided whitelist:
         .matchString(...opList).map(s => ({ value: s, isOp: true }))
 }
 
-export function ignoreWhitespace(): InternalParser<void> {
+function ignoreWhitespace(): InternalParser<boolean> {
     return Parser
         .takeWhile(WHITESPACE_REGEX)
+        .map(s => !!s.length)
+}
+
+function mustIgnoreWhitespace(): InternalParser<void> {
+    return Parser
+        .mustTakeWhile(WHITESPACE_REGEX)
         .map(_ => undefined)
 }

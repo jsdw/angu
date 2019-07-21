@@ -18,10 +18,4 @@ export declare function functioncallExpression(opts: InternalContext): InternalP
 export declare function parenExpression(opts: InternalContext): InternalParser<Expression>;
 export declare function string(delim: string): InternalParser<string>;
 export declare function token(): InternalParser<string>;
-declare type Op = {
-    value: string;
-    isOp: boolean;
-};
-export declare function op(opList: string[]): InternalParser<Op>;
-export declare function ignoreWhitespace(): InternalParser<void>;
 export {};

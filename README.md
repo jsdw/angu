@@ -139,7 +139,7 @@ foo(1,2)
 ```
 
 If the function takes exactly two arguments, and is also listed in the precedence list, it can be used infix
-too, like so:
+too, like so (there must be spaces separating the function name from the expressions on either side):
 
 ```
 1 foo 2
