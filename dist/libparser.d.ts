@@ -45,6 +45,12 @@ export declare class Parser<T, E> {
     static ok<T, E>(val: T): Parser<T, E>;
     /** Any one character. Only fails on an empty string */
     static anyChar(): Parser<string, LibParseError>;
+    /**
+     * Parse a string.
+     * Expects strings to be surrounded in single or double quotes.
+     * backslash to escape; anything can be escaped.
+     */
+    static string(): Parser<string, LibParseError>;
     /** Parse a number as a string */
     static numberStr(): Parser<string, LibParseError>;
     /** A convenience function to turn a function scope into a parser to avoid reuse of vars */
@@ -75,10 +81,6 @@ export declare class Parser<T, E> {
     mustSepBy<S>(sep: Parser<S, unknown>): Parser<{
         results: T[];
         separators: S[];
-    }, LibParseError>;
-    static takeUntil<T>(untilParser: Parser<T, unknown>): Parser<{
-        result: string;
-        until: T;
     }, LibParseError>;
 }
 export {};

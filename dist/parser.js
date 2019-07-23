@@ -45,7 +45,7 @@ function numberExpression() {
 }
 exports.numberExpression = numberExpression;
 function stringExpression() {
-    return string("'").or(string('"')).mapWithPosition(function (s, pos) {
+    return libparser_1.Parser.string().mapWithPosition(function (s, pos) {
         return { kind: 'string', value: s, pos: pos };
     });
 }
@@ -199,19 +199,6 @@ function parenExpression(opts) {
 }
 exports.parenExpression = parenExpression;
 // Helpful utility parsers:
-function string(delim) {
-    var escapesAndEnds = libparser_1.Parser.matchString('\\\\', '\\' + delim, delim);
-    var restOfString = libparser_1.Parser.takeUntil(escapesAndEnds)
-        .andThen(function (c) {
-        if (c.until === '\\' + delim)
-            return restOfString.map(function (s) { return c.result + delim + s; });
-        else if (c.until === '\\\\')
-            return restOfString.map(function (s) { return c.result + '\\' + s; });
-        return libparser_1.Parser.ok(c.result);
-    });
-    return libparser_1.Parser.matchString("" + delim).andThen(function (_) { return restOfString; });
-}
-exports.string = string;
 function token() {
     return libparser_1.Parser.lazy(function () {
         var s = "";

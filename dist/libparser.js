@@ -36,6 +36,48 @@ var Parser = /** @class */ (function () {
             }
         });
     };
+    /**
+     * Parse a string.
+     * Expects strings to be surrounded in single or double quotes.
+     * backslash to escape; anything can be escaped.
+     */
+    Parser.string = function () {
+        return new Parser(function (input) {
+            var thisDelim = input[0];
+            if (thisDelim !== '"' && thisDelim !== "'") {
+                return result.err({
+                    kind: 'EXPECTS_A_STRING',
+                    expectedOneOf: ['"', "'"],
+                    input: input
+                });
+            }
+            var i = 1;
+            var lastEscape = false;
+            var s = "";
+            while (i < input.length) {
+                var char = input[i];
+                // escape if backslash:
+                if (!lastEscape && char === '\\') {
+                    lastEscape = true;
+                }
+                // return if closing delim, unescaped:
+                else if (!lastEscape && char === thisDelim) {
+                    return result.ok({ output: s, rest: input.slice(i + 1) });
+                }
+                // Append char, unset escape mode if set:
+                else {
+                    s += char;
+                    lastEscape = false;
+                }
+                i++;
+            }
+            // We haven't returned a string, so we ran out of chars:
+            return result.err({
+                kind: 'EXPECTS_A_CHAR',
+                input: ''
+            });
+        });
+    };
     /** Parse a number as a string */
     Parser.numberStr = function () {
         return new Parser(function (input) {
@@ -49,7 +91,7 @@ var Parser = /** @class */ (function () {
                 });
             }
             // Prefix:
-            function sign() {
+            function pushSign() {
                 if (input[idx] === '+') {
                     idx++;
                 }
@@ -58,7 +100,6 @@ var Parser = /** @class */ (function () {
                     nStr += '-';
                 }
             }
-            sign();
             // Leading digits:
             function pushDigits() {
                 var hasNumbers = false;
@@ -71,6 +112,7 @@ var Parser = /** @class */ (function () {
                 }
                 return hasNumbers;
             }
+            pushSign();
             var hasLeadingDigits = pushDigits();
             var hasDecimalPlaces = false;
             // Decimal place and numbers after it:
@@ -102,11 +144,15 @@ var Parser = /** @class */ (function () {
             // Exponent (e/E followed by optional sign and digits):
             var e = input[idx];
             if (e === 'e' || e === 'E') {
+                var eIdx = idx;
                 nStr += 'e';
                 idx++;
-                sign();
+                pushSign();
                 if (!pushDigits()) {
-                    return nan();
+                    // If no digits after E, roll back to last
+                    // valid number and return that:
+                    idx = eIdx;
+                    nStr = nStr.slice(0, eIdx);
                 }
             }
             return result.ok({
@@ -279,34 +325,6 @@ var Parser = /** @class */ (function () {
             else {
                 return res;
             }
-        });
-    };
-    Parser.takeUntil = function (untilParser) {
-        return new Parser(function (input) {
-            var back = [];
-            while (input.length) {
-                // If we parse the "until", return what we have:
-                var u = untilParser.parse(input);
-                if (result.isOk(u)) {
-                    return result.ok({
-                        output: {
-                            result: back.join(''),
-                            until: u.value.output,
-                        },
-                        rest: u.value.rest
-                    });
-                }
-                // Try parsing the original parser and add to back:
-                var r = Parser.anyChar().parse(input);
-                if (result.isOk(r)) {
-                    back.push(r.value.output);
-                    input = r.value.rest;
-                }
-            }
-            return result.err({
-                kind: 'EXPECTS_A_CHAR',
-                input: ''
-            });
         });
     };
     return Parser;

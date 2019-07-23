@@ -54,7 +54,7 @@ export function numberExpression(): InternalParser<Expression> {
 }
 
 export function stringExpression(): InternalParser<Expression> {
-    return string("'").or(string('"')).mapWithPosition((s, pos) => {
+    return Parser.string().mapWithPosition((s, pos) => {
         return { kind: 'string', value: s, pos }
     })
 }
@@ -211,18 +211,6 @@ export function parenExpression(opts: InternalContext): InternalParser<Expressio
 }
 
 // Helpful utility parsers:
-
-export function string(delim: string): InternalParser<string> {
-    const escapesAndEnds
-        = Parser.matchString('\\\\', '\\' + delim, delim)
-    const restOfString: InternalParser<string> = Parser.takeUntil(escapesAndEnds)
-        .andThen(c => {
-            if(c.until === '\\' + delim) return restOfString.map(s => c.result + delim + s)
-            else if(c.until === '\\\\') return restOfString.map(s => c.result + '\\' + s)
-            return Parser.ok(c.result)
-        })
-    return Parser.matchString(`${delim}`).andThen(_ => restOfString)
-}
 
 export function token(): InternalParser<string> {
     return Parser.lazy(() => {

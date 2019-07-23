@@ -77,6 +77,54 @@ export class Parser<T,E> {
         })
     }
 
+    /**
+     * Parse a string.
+     * Expects strings to be surrounded in single or double quotes.
+     * backslash to escape; anything can be escaped.
+     */
+    static string(): Parser<string,LibParseError> {
+        return new Parser(input => {
+            const thisDelim = input[0]
+
+            if (thisDelim !== '"' && thisDelim !== "'") {
+                return result.err({
+                    kind: 'EXPECTS_A_STRING',
+                    expectedOneOf: ['"', "'"],
+                    input
+                })
+            }
+
+            let i = 1
+            let lastEscape = false
+            let s = ""
+            while (i < input.length) {
+                let char = input[i]
+
+                // escape if backslash:
+                if (!lastEscape && char === '\\') {
+                    lastEscape = true
+                }
+                // return if closing delim, unescaped:
+                else if (!lastEscape && char === thisDelim) {
+                    return result.ok({ output: s, rest: input.slice(i+1) })
+                }
+                // Append char, unset escape mode if set:
+                else {
+                    s += char
+                    lastEscape = false
+                }
+
+                i++
+            }
+
+            // We haven't returned a string, so we ran out of chars:
+            return result.err({
+                kind: 'EXPECTS_A_CHAR',
+                input: ''
+            })
+        })
+    }
+
     /** Parse a number as a string */
     static numberStr(): Parser<string,LibParseError> {
         return new Parser(input => {
@@ -90,9 +138,8 @@ export class Parser<T,E> {
                     input
                 })
             }
-
             // Prefix:
-            function sign () {
+            function pushSign () {
                 if (input[idx] === '+') {
                     idx++
                 } else if (input[idx] === '-') {
@@ -100,8 +147,6 @@ export class Parser<T,E> {
                     nStr += '-'
                 }
             }
-            sign()
-
             // Leading digits:
             function pushDigits () {
                 let hasNumbers = false
@@ -115,6 +160,7 @@ export class Parser<T,E> {
                 return hasNumbers
             }
 
+            pushSign()
             const hasLeadingDigits = pushDigits()
             let hasDecimalPlaces = false
 
@@ -147,11 +193,15 @@ export class Parser<T,E> {
             // Exponent (e/E followed by optional sign and digits):
             let e = input[idx]
             if (e === 'e' || e === 'E') {
+                const eIdx = idx
                 nStr += 'e'
                 idx++
-                sign()
+                pushSign()
                 if (!pushDigits()) {
-                    return nan()
+                    // If no digits after E, roll back to last
+                    // valid number and return that:
+                    idx = eIdx
+                    nStr = nStr.slice(0,eIdx)
                 }
             }
 
@@ -324,32 +374,4 @@ export class Parser<T,E> {
         })
     }
 
-    static takeUntil<T>(untilParser: Parser<T,unknown>): Parser<{ result: string, until: T },LibParseError> {
-        return new Parser(input => {
-            let back: string[] = []
-            while (input.length) {
-                // If we parse the "until", return what we have:
-                const u = untilParser.parse(input)
-                if (result.isOk(u)) {
-                    return result.ok({
-                        output: {
-                            result: back.join(''),
-                            until: u.value.output,
-                        },
-                        rest: u.value.rest
-                    })
-                }
-                // Try parsing the original parser and add to back:
-                const r = Parser.anyChar().parse(input)
-                if (result.isOk(r)) {
-                    back.push(r.value.output)
-                    input = r.value.rest
-                }
-            }
-            return result.err({
-                kind: 'EXPECTS_A_CHAR',
-                input: ''
-            })
-        })
-    }
 }

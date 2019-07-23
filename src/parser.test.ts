@@ -5,21 +5,6 @@ import { ok, isErr } from './result'
 
 describe('parser', function() {
 
-    it('parses strings with arbitrary delims properly', () => {
-        assertParsesStrings('"')
-        assertParsesStrings("'")
-    })
-    function assertParsesStrings(delim: string) {
-        assert.deepEqual(parser.string(delim).eval(`${delim}hello${delim}`), ok('hello'))
-        assert.deepEqual(parser.string(delim).eval(`${delim}${delim}`), ok(''))
-        // '\"" == '"' in the output:
-        assert.deepEqual(parser.string(delim).eval(`${delim}hello \\${delim} there${delim}`), ok(`hello ${delim} there`))
-        // two '\'s == one escaped '\' in the output:
-        assert.deepEqual(parser.string(delim).eval(`${delim}hello \\\\${delim}`), ok('hello \\'))
-        // three '\'s + '"' == one escaped '\' and then an escaped '"':
-        assert.deepEqual(parser.string(delim).eval(`${delim}hello \\\\\\${delim}${delim}`), ok(`hello \\${delim}`))
-    }
-
     it('parses numbers in preference to unary ops', () => {
         const opts = toInternalContext({ })
         // Make sure '-' and '+' are treated as part of the number

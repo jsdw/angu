@@ -16,6 +16,5 @@ export declare function unaryOpExpression(opts: InternalContext): InternalParser
 export declare function binaryOpExpression(opts: InternalContext): InternalParser<Expression>;
 export declare function functioncallExpression(opts: InternalContext): InternalParser<Expression>;
 export declare function parenExpression(opts: InternalContext): InternalParser<Expression>;
-export declare function string(delim: string): InternalParser<string>;
 export declare function token(): InternalParser<string>;
 export {};

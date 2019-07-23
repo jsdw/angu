@@ -4,6 +4,21 @@ import * as assert from 'assert'
 
 describe("libparser", function() {
 
+    it('parses strings properly', () => {
+        assertParsesStrings("'")
+        assertParsesStrings('"')
+    })
+    function assertParsesStrings(delim: string) {
+        assert.deepEqual(Parser.string().eval(`${delim}hello${delim}`), ok('hello'))
+        assert.deepEqual(Parser.string().eval(`${delim}${delim}`), ok(''))
+        // '\"" == '"' in the output:
+        assert.deepEqual(Parser.string().eval(`${delim}hello \\${delim} there${delim}`), ok(`hello ${delim} there`))
+        // two '\'s == one escaped '\' in the output:
+        assert.deepEqual(Parser.string().eval(`${delim}hello \\\\${delim}`), ok('hello \\'))
+        // three '\'s + '"' == one escaped '\' and then an escaped '"':
+        assert.deepEqual(Parser.string().eval(`${delim}hello \\\\\\${delim}${delim}`), ok(`hello \\${delim}`))
+    }
+
     it('parses basic numbers properly', () => {
         assert.deepEqual(Parser.numberStr().parse('1234'), ok({ output: '1234', rest: '' }))
         assert.deepEqual(Parser.numberStr().parse('1234.56'), ok({ output: '1234.56', rest: '' }))
@@ -20,17 +35,18 @@ describe("libparser", function() {
         assert.deepEqual(Parser.numberStr().parse('1.9E-10'), ok({ output: '1.9e-10', rest: '' }))
         assert.deepEqual(Parser.numberStr().parse('1.9E+10'), ok({ output: '1.9e10', rest: '' }))
 
-        assert.deepEqual(Parser.numberStr().parse('9.'), ok({ output: '9', rest: '.' })) // fails to consume '.' if no numbers after it (could be an operator).
+        assert.deepEqual(Parser.numberStr().parse('9.k'), ok({ output: '9', rest: '.k' })) // fails to consume '.' if no numbers after it (could be an operator).
         assert.deepEqual(Parser.numberStr().parse('9.e2'), ok({ output: '9', rest: '.e2' })) // can't use '.' then exponent
+        assert.deepEqual(Parser.numberStr().parse('9e-'), ok({ output: '9', rest: 'e-' }))
+        assert.deepEqual(Parser.numberStr().parse('9e+'), ok({ output: '9', rest: 'e+' }))
+        assert.deepEqual(Parser.numberStr().parse('9.0e-'), ok({ output: '9.0', rest: 'e-' }))
 
-        assert.ok(isErr(Parser.numberStr().parse('.')))
-        assert.ok(isErr(Parser.numberStr().parse('e')))
-        assert.ok(isErr(Parser.numberStr().parse('E')))
-        assert.ok(isErr(Parser.numberStr().parse('.E2')))
-        assert.ok(isErr(Parser.numberStr().parse('-E2')))
-        assert.ok(isErr(Parser.numberStr().parse('E2')))
-        assert.ok(isErr(Parser.numberStr().parse('-')))
-        assert.ok(isErr(Parser.numberStr().parse('-.')))
+        // These are all invalid numbers:
+        const badNums = ['.', 'e', 'E', '.E2', '-E2', 'E2', '-', '-.']
+        badNums.forEach(badNum => {
+            assert.ok(isErr(Parser.numberStr().parse(badNum)))
+        })
+
     })
 
     it('can match any character', () => {
@@ -84,12 +100,6 @@ describe("libparser", function() {
             assert.equal(res.value.output, m)
         }
     }
-
-    it('can takeUntil', () => {
-        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('foo'), err({ kind: 'EXPECTS_A_CHAR', input: '' }))
-        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('fool'), ok({ output: { result: 'foo', until: 'l' }, rest: '' }))
-        assert.deepEqual(Parser.takeUntil(Parser.matchString('l')).parse('list'), ok({ output: { result: '', until: 'l' }, rest: 'ist' }))
-    })
 
     it('will get at least one char back from mustTakeWhile', () => {
         const p = Parser.mustTakeWhile(/[0-9]/)

@@ -12,20 +12,6 @@ var parser = __importStar(require("./parser"));
 var context_1 = require("./context");
 var result_1 = require("./result");
 describe('parser', function () {
-    it('parses strings with arbitrary delims properly', function () {
-        assertParsesStrings('"');
-        assertParsesStrings("'");
-    });
-    function assertParsesStrings(delim) {
-        assert.deepEqual(parser.string(delim).eval(delim + "hello" + delim), result_1.ok('hello'));
-        assert.deepEqual(parser.string(delim).eval("" + delim + delim), result_1.ok(''));
-        // '\"" == '"' in the output:
-        assert.deepEqual(parser.string(delim).eval(delim + "hello \\" + delim + " there" + delim), result_1.ok("hello " + delim + " there"));
-        // two '\'s == one escaped '\' in the output:
-        assert.deepEqual(parser.string(delim).eval(delim + "hello \\\\" + delim), result_1.ok('hello \\'));
-        // three '\'s + '"' == one escaped '\' and then an escaped '"':
-        assert.deepEqual(parser.string(delim).eval(delim + "hello \\\\\\" + delim + delim), result_1.ok("hello \\" + delim));
-    }
     it('parses numbers in preference to unary ops', function () {
         var opts = context_1.toInternalContext({});
         // Make sure '-' and '+' are treated as part of the number
