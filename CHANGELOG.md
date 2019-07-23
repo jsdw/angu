@@ -1,3 +1,9 @@
+# v0.11.2
+
+## Additions
+
+- Speed up string parsing.
+
 # v0.11.1
 
 ## Breaking Changes
