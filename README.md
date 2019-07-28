@@ -1,10 +1,8 @@
 # Angu
 
-A small library that can be used to implement and safely evaluate DSLs (Domain Specific Languages)
-in the browser or in NodeJS. You have complete control over every operation performed, and this library
-takes care of the nitty gritty of the parsing and such.
-
-Zero dependencies, and comes with javascript typings (usage optional).
+A small, zero-dependency library that can be used to build and evaluate mini-languages in the browser 
+or in NodeJS. You have complete control over every operation performed, and this library takes care of 
+the nitty gritty of the parsing and such. Comes with TypeScript typings (usage optional).
 
 We can use this to create a simple in-browser calculator to evaluate things like:
 
