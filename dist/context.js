@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.toInternalContext = void 0;
 var parser_1 = require("./parser");
 var OP_REGEX = /^[!£$%^&*@#~?<>|/+=;:.-]+$/;
 function toInternalContext(ctx) {

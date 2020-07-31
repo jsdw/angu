@@ -1,4 +1,4 @@
-import { Parser } from './libparser'
+import { Parser, LibParseError } from './libparser'
 import { isOk, isErr, ok, err } from './result'
 import * as assert from 'assert'
 
@@ -132,6 +132,39 @@ describe("libparser", function() {
         assert.deepEqual(p.parse('foobarr1'), ok({ output: ['foo', 'bar', 'r'], rest: '1' }))
         assert.deepEqual(p.parse('foobar'), ok({ output: ['foo', 'bar', ''], rest: '' }))
         assert.ok(isErr(p.parse('fooba')))
+    })
+
+    it('can separate with sepBy', () => {
+        const n = Parser.numberStr()
+        const sep = Parser.takeWhile(/\s+/)
+            .mapErr(_ => _ as LibParseError)
+            .andThen(_ => Parser.matchString('+', '-'))
+            .andThen(s => Parser.takeWhile(/\s+/).map(_ => s))
+        const p = n.sepBy(sep)
+
+        assert.deepEqual(p.parse(''), err({ kind: 'NOT_A_NUMBER', input: ''}))
+        assert.deepEqual(p.parse('1'), ok({ output: { results: ['1'], separators: [] }, rest: '' }), 'A')
+        assert.deepEqual(p.parse('1 +'), ok({ output: { results: ['1'], separators: [] }, rest: ' +' }), 'B')
+        assert.deepEqual(p.parse('1 + 2'), ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: '' }), 'C')
+        assert.deepEqual(p.parse('1 + 2 '), ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' ' }), 'D')
+        assert.deepEqual(p.parse('1 + 2 -'), ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' -' }), 'E')
+        assert.deepEqual(p.parse('1 + 2 - 3'), ok({ output: { results: ['1', '2', '3'], separators: ['+', '-'] }, rest: '' }), 'F')
+    })
+
+    it('must separate with mustSepBy', () => {
+        const n = Parser.numberStr()
+        const sep = Parser.takeWhile(/\s+/)
+            .mapErr(_ => _ as LibParseError)
+            .andThen(_ => Parser.matchString('+', '-'))
+            .andThen(s => Parser.takeWhile(/\s+/).map(_ => s))
+        const p = n.mustSepBy(sep)
+
+        assert.deepEqual(p.parse('1'), err({ input: '1', kind: 'EXPECTS_A_SEPARATOR' }), 'A')
+        assert.deepEqual(p.parse('1 +'), err({ input: '1 +', kind: 'EXPECTS_A_SEPARATOR' }), 'B')
+        assert.deepEqual(p.parse('1 + 2'), ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: '' }), 'C')
+        assert.deepEqual(p.parse('1 + 2 '), ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' ' }), 'D')
+        assert.deepEqual(p.parse('1 + 2 -'), ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' -' }), 'E')
+        assert.deepEqual(p.parse('1 + 2 - 3'), ok({ output: { results: ['1', '2', '3'], separators: ['+', '-'] }, rest: '' }), 'F')
     })
 
 })

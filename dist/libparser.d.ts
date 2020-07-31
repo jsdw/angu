@@ -77,10 +77,10 @@ export declare class Parser<T, E> {
     sepBy<S>(sep: Parser<S, unknown>): Parser<{
         results: T[];
         separators: S[];
-    }, never>;
+    }, E>;
     mustSepBy<S>(sep: Parser<S, unknown>): Parser<{
         results: T[];
         separators: S[];
-    }, LibParseError>;
+    }, E | LibParseError>;
 }
 export {};

@@ -335,27 +335,35 @@ export class Parser<T,E> {
         })
     }
 
-    sepBy<S>(sep: Parser<S,unknown>): Parser<{ results: T[], separators: S[]},never> {
+    sepBy<S>(sep: Parser<S,unknown>): Parser<{ results: T[], separators: S[]},E> {
         return new Parser(input => {
             let results: T[] = []
             let separators: S[] = []
             let restOfInput = input
-            while (true) {
-                const res = this.parse(restOfInput)
-                if (result.isOk(res)) {
-                    results.push(res.value.output)
-                    restOfInput = res.value.rest
-                    const sepRes = sep.parse(restOfInput)
-                    if (result.isOk(sepRes)) {
-                        restOfInput = sepRes.value.rest
-                        separators.push(sepRes.value.output)
-                    } else {
-                        break
-                    }
-                } else {
-                    break
-                }
+
+
+            // parse the first result, bailing if we can't even do that:
+            const res = this.parse(restOfInput)
+            if (result.isOk(res)) {
+                results.push(res.value.output)
+                restOfInput = res.value.rest
+            } else {
+                return res
             }
+
+            // now, expect sep + result each time to keep going:
+            while (true) {
+                const sepRes = sep.parse(restOfInput)
+                if (result.isErr(sepRes)) { break }
+
+                const res = this.parse(sepRes.value.rest)
+                if (result.isErr(res)) { break }
+
+                separators.push(sepRes.value.output)
+                results.push(res.value.output)
+                restOfInput = res.value.rest
+            }
+
             return result.ok({
                 output: { results, separators },
                 rest: restOfInput
@@ -363,13 +371,13 @@ export class Parser<T,E> {
         })
     }
 
-    mustSepBy<S>(sep: Parser<S,unknown>): Parser<{ results: T[], separators: S[]},LibParseError>  {
+    mustSepBy<S>(sep: Parser<S,unknown>): Parser<{ results: T[], separators: S[]},E | LibParseError>  {
         return new Parser(input => {
             const res = this.sepBy(sep).parse(input)
             if (result.isOk(res) && !res.value.output.separators.length) {
-                return result.err({ kind: 'EXPECTS_A_SEPARATOR', input })
+                return result.err<any,E|LibParseError>({ kind: 'EXPECTS_A_SEPARATOR', input })
             } else {
-                return res
+                 return res
             }
         })
     }

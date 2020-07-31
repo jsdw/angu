@@ -181,7 +181,8 @@ export function functioncallExpression(opts: InternalContext): InternalParser<Ex
             .andThen(_ => {
                 return anyExpression(opts)
                     .sepBy(sep)
-                    .map(({ results }) => results)
+                    .optional()
+                    .map(maybe => maybe.kind === 'ok' ? maybe.value.results : [])
             })
             .andThen(r => {
                 return ignoreWhitespace()

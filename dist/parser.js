@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.token = exports.parenExpression = exports.functioncallExpression = exports.binaryOpExpression = exports.unaryOpExpression = exports.booleanExpression = exports.stringExpression = exports.numberExpression = exports.variableExpression = exports.binaryOpSubExpression = exports.anyExpression = exports.expression = void 0;
 var libparser_1 = require("./libparser");
 var TOKEN_START_REGEX = /[a-zA-Z]/;
 var TOKEN_BODY_REGEX = /[a-zA-Z0-9_]/;
@@ -167,10 +168,8 @@ function functioncallExpression(opts) {
             .andThen(function (_) {
             return anyExpression(opts)
                 .sepBy(sep)
-                .map(function (_a) {
-                var results = _a.results;
-                return results;
-            });
+                .optional()
+                .map(function (maybe) { return maybe.kind === 'ok' ? maybe.value.results : []; });
         })
             .andThen(function (r) {
             return ignoreWhitespace()

@@ -1,12 +1,25 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.prepareContext = exports.evaluate = void 0;
 var thunk = __importStar(require("./thunk"));
 var parser = __importStar(require("./parser"));
 var errors = __importStar(require("./errors"));
@@ -14,7 +27,7 @@ var result_1 = require("./result");
 var context_1 = require("./context");
 // Re-export the Value type, since it's handed to functions in scope:
 var thunk_1 = require("./thunk");
-exports.Value = thunk_1.Value;
+Object.defineProperty(exports, "Value", { enumerable: true, get: function () { return thunk_1.Value; } });
 /**
  * Given an expression to evaluate in string form, and a context
  * to evaluate the expression against, return the result of

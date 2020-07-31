@@ -11,6 +11,7 @@ var __assign = (this && this.__assign) || function () {
     return __assign.apply(this, arguments);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.toOutputError = void 0;
 /** Given the original input string, this function adds position info to the provided Error  */
 function toOutputError(fullInput, error) {
     var start;
@@ -20,13 +21,13 @@ function toOutputError(fullInput, error) {
         case 'NOT_CONSUMED_ALL':
             start = fullInput.length - error.input.length;
             end = start;
-            return __assign({}, error, { pos: { start: start, end: end } });
+            return __assign(__assign({}, error), { pos: { start: start, end: end } });
         case 'EVAL_THROW':
         case 'FUNCTION_NOT_DEFINED':
         case 'NOT_A_FUNCTION':
             start = fullInput.length - error.expr.pos.startLen;
             end = fullInput.length - error.expr.pos.endLen;
-            return __assign({}, error, { pos: { start: start, end: end } });
+            return __assign(__assign({}, error), { pos: { start: start, end: end } });
     }
     neverHappens(error);
 }

@@ -181,19 +181,19 @@ describe('parser', function() {
             name: 'foo',
             infix: false,
             args: []
-        }))
+        }), 'A')
         assertRoughlyEqual(parser.expression(opts).eval('foo(1)'), ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
             args: [{ kind: 'number', value: 1, string: '1' }]
-        }))
+        }), 'B')
         assertRoughlyEqual(parser.expression(opts).eval('foo(((1)))'), ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
             args: [{ kind: 'number', value: 1, string: '1' }]
-        }))
+        }), 'C')
         assertRoughlyEqual(parser.expression(opts).parse('foo(1, bar,2 , true )'), ok({
             output: {
                 kind: 'functioncall',
@@ -207,7 +207,7 @@ describe('parser', function() {
                 ]
             },
             rest: ''
-        }))
+        }), 'D')
     })
 
     it('parses the `.` binary op OK despite it being used in numbers', () => {
@@ -368,11 +368,11 @@ describe('parser', function() {
     })
 })
 
-function assertRoughlyEqual(a: any, b: any) {
+function assertRoughlyEqual(a: any, b: any, msg?: string) {
     // strip position information, since we don't want to have to manually add that:
     stripPositionInformation(a)
     stripPositionInformation(b)
-    assert.deepEqual(a, b)
+    assert.deepEqual(a, b, msg)
 }
 
 function stripPositionInformation(a: any) {

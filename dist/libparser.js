@@ -1,12 +1,25 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Parser = void 0;
 var result = __importStar(require("./result"));
 var Parser = /** @class */ (function () {
     function Parser(_fn_) {
@@ -291,23 +304,28 @@ var Parser = /** @class */ (function () {
             var results = [];
             var separators = [];
             var restOfInput = input;
+            // parse the first result, bailing if we can't even do that:
+            var res = _this.parse(restOfInput);
+            if (result.isOk(res)) {
+                results.push(res.value.output);
+                restOfInput = res.value.rest;
+            }
+            else {
+                return res;
+            }
+            // now, expect sep + result each time to keep going:
             while (true) {
-                var res = _this.parse(restOfInput);
-                if (result.isOk(res)) {
-                    results.push(res.value.output);
-                    restOfInput = res.value.rest;
-                    var sepRes = sep.parse(restOfInput);
-                    if (result.isOk(sepRes)) {
-                        restOfInput = sepRes.value.rest;
-                        separators.push(sepRes.value.output);
-                    }
-                    else {
-                        break;
-                    }
-                }
-                else {
+                var sepRes = sep.parse(restOfInput);
+                if (result.isErr(sepRes)) {
                     break;
                 }
+                var res_1 = _this.parse(sepRes.value.rest);
+                if (result.isErr(res_1)) {
+                    break;
+                }
+                separators.push(sepRes.value.output);
+                results.push(res_1.value.output);
+                restOfInput = res_1.value.rest;
             }
             return result.ok({
                 output: { results: results, separators: separators },

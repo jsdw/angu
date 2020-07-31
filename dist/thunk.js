@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Value = exports.create = void 0;
 function create(expr, context, inputLength, locals) {
     switch (expr.kind) {
         case 'variable': return thunkVariable(expr, context, inputLength, locals);

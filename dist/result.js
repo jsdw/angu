@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.toOutputResult = exports.mapErr = exports.map = exports.isErr = exports.isOk = exports.err = exports.ok = void 0;
 function ok(value) {
     return { kind: 'ok', value: value };
 }

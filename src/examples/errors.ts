@@ -34,7 +34,7 @@ export default function errorMessages () {
     // of the string that was not consumed:
     assert.equal(r1.kind, 'err')
     assert.equal(r1.value.kind, 'NOT_CONSUMED_ALL')
-    assert.equal(r1.value.input, '* 4 + 2')
+    if (r1.value.kind === 'NOT_CONSUMED_ALL') assert.equal(r1.value.input, '* 4 + 2')
 
     // parse errors occur at a specific point, so start == end:
     assert.equal(r1.value.pos.start, 3)

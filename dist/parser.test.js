@@ -1,9 +1,21 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -182,19 +194,19 @@ describe('parser', function () {
             name: 'foo',
             infix: false,
             args: []
-        }));
+        }), 'A');
         assertRoughlyEqual(parser.expression(opts).eval('foo(1)'), result_1.ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
             args: [{ kind: 'number', value: 1, string: '1' }]
-        }));
+        }), 'B');
         assertRoughlyEqual(parser.expression(opts).eval('foo(((1)))'), result_1.ok({
             kind: 'functioncall',
             name: 'foo',
             infix: false,
             args: [{ kind: 'number', value: 1, string: '1' }]
-        }));
+        }), 'C');
         assertRoughlyEqual(parser.expression(opts).parse('foo(1, bar,2 , true )'), result_1.ok({
             output: {
                 kind: 'functioncall',
@@ -208,7 +220,7 @@ describe('parser', function () {
                 ]
             },
             rest: ''
-        }));
+        }), 'D');
     });
     it('parses the `.` binary op OK despite it being used in numbers', function () {
         var opts = context_1.toInternalContext({
@@ -365,11 +377,11 @@ describe('parser', function () {
         }));
     });
 });
-function assertRoughlyEqual(a, b) {
+function assertRoughlyEqual(a, b, msg) {
     // strip position information, since we don't want to have to manually add that:
     stripPositionInformation(a);
     stripPositionInformation(b);
-    assert.deepEqual(a, b);
+    assert.deepEqual(a, b, msg);
 }
 function stripPositionInformation(a) {
     if (typeof a === 'object') {

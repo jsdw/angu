@@ -1,9 +1,21 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -126,5 +138,34 @@ describe("libparser", function () {
         assert.deepEqual(p.parse('foobarr1'), result_1.ok({ output: ['foo', 'bar', 'r'], rest: '1' }));
         assert.deepEqual(p.parse('foobar'), result_1.ok({ output: ['foo', 'bar', ''], rest: '' }));
         assert.ok(result_1.isErr(p.parse('fooba')));
+    });
+    it('can separate with sepBy', function () {
+        var n = libparser_1.Parser.numberStr();
+        var sep = libparser_1.Parser.takeWhile(/\s+/)
+            .mapErr(function (_) { return _; })
+            .andThen(function (_) { return libparser_1.Parser.matchString('+', '-'); })
+            .andThen(function (s) { return libparser_1.Parser.takeWhile(/\s+/).map(function (_) { return s; }); });
+        var p = n.sepBy(sep);
+        assert.deepEqual(p.parse(''), result_1.err({ kind: 'NOT_A_NUMBER', input: '' }));
+        assert.deepEqual(p.parse('1'), result_1.ok({ output: { results: ['1'], separators: [] }, rest: '' }), 'A');
+        assert.deepEqual(p.parse('1 +'), result_1.ok({ output: { results: ['1'], separators: [] }, rest: ' +' }), 'B');
+        assert.deepEqual(p.parse('1 + 2'), result_1.ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: '' }), 'C');
+        assert.deepEqual(p.parse('1 + 2 '), result_1.ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' ' }), 'D');
+        assert.deepEqual(p.parse('1 + 2 -'), result_1.ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' -' }), 'E');
+        assert.deepEqual(p.parse('1 + 2 - 3'), result_1.ok({ output: { results: ['1', '2', '3'], separators: ['+', '-'] }, rest: '' }), 'F');
+    });
+    it('must separate with mustSepBy', function () {
+        var n = libparser_1.Parser.numberStr();
+        var sep = libparser_1.Parser.takeWhile(/\s+/)
+            .mapErr(function (_) { return _; })
+            .andThen(function (_) { return libparser_1.Parser.matchString('+', '-'); })
+            .andThen(function (s) { return libparser_1.Parser.takeWhile(/\s+/).map(function (_) { return s; }); });
+        var p = n.mustSepBy(sep);
+        assert.deepEqual(p.parse('1'), result_1.err({ input: '1', kind: 'EXPECTS_A_SEPARATOR' }), 'A');
+        assert.deepEqual(p.parse('1 +'), result_1.err({ input: '1 +', kind: 'EXPECTS_A_SEPARATOR' }), 'B');
+        assert.deepEqual(p.parse('1 + 2'), result_1.ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: '' }), 'C');
+        assert.deepEqual(p.parse('1 + 2 '), result_1.ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' ' }), 'D');
+        assert.deepEqual(p.parse('1 + 2 -'), result_1.ok({ output: { results: ['1', '2'], separators: ['+'] }, rest: ' -' }), 'E');
+        assert.deepEqual(p.parse('1 + 2 - 3'), result_1.ok({ output: { results: ['1', '2', '3'], separators: ['+', '-'] }, rest: '' }), 'F');
     });
 });

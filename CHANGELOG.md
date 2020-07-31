@@ -1,3 +1,11 @@
+# v0.12.0
+
+## Bug Fixes
+
+- Evaluating a phrase like `1 +` could lead to an error being thrown due to the internal
+  `sepBy` parsing consuming a separator even if there was not valid input following it.
+  This has been fixed, and tests added to verify.
+
 # v0.11.2
 
 ## Additions
